@@ -9,8 +9,15 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CommunityDrivenSocialPlatform_APi.Model
 {
+    [Table("post")]
     public partial class Post
     {
+        public Post()
+        {
+            Comment = new HashSet<Comment>();
+            Vote = new HashSet<Vote>();
+        }
+
         [Key]
         [Column("id")]
         public int Id { get; set; }
@@ -34,5 +41,9 @@ namespace CommunityDrivenSocialPlatform_APi.Model
         [ForeignKey(nameof(SubThreadId))]
         [InverseProperty("Post")]
         public virtual SubThread SubThread { get; set; }
+        [InverseProperty("Post")]
+        public virtual ICollection<Comment> Comment { get; set; }
+        [InverseProperty("Post")]
+        public virtual ICollection<Vote> Vote { get; set; }
     }
 }

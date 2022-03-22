@@ -9,27 +9,26 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CommunityDrivenSocialPlatform_APi.Model
 {
-    [Table("vote")]
-    public partial class Vote
+    [Table("comment")]
+    public partial class Comment
     {
         [Key]
         [Column("id")]
         public int Id { get; set; }
-        [Column("user_id")]
-        public int UserId { get; set; }
         [Column("post_id")]
         public int PostId { get; set; }
-        [Column("vote_type_id")]
-        public byte VoteTypeId { get; set; }
+        [Column("user_id")]
+        public int UserId { get; set; }
+        [Column("body")]
+        public int Body { get; set; }
+        [Column("created_at")]
+        public int CreatedAt { get; set; }
 
         [ForeignKey(nameof(PostId))]
-        [InverseProperty("Vote")]
+        [InverseProperty("Comment")]
         public virtual Post Post { get; set; }
         [ForeignKey(nameof(UserId))]
-        [InverseProperty("Vote")]
+        [InverseProperty("Comment")]
         public virtual User User { get; set; }
-        [ForeignKey(nameof(VoteTypeId))]
-        [InverseProperty("Vote")]
-        public virtual VoteType VoteType { get; set; }
     }
 }

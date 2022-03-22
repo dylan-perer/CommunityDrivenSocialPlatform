@@ -12,6 +12,11 @@ namespace CommunityDrivenSocialPlatform_APi.Model
     [Table("vote_type")]
     public partial class VoteType
     {
+        public VoteType()
+        {
+            Vote = new HashSet<Vote>();
+        }
+
         [Key]
         [Column("id")]
         public byte Id { get; set; }
@@ -19,5 +24,8 @@ namespace CommunityDrivenSocialPlatform_APi.Model
         [Column("vote_type_name")]
         [StringLength(10)]
         public string VoteTypeName { get; set; }
+
+        [InverseProperty("VoteType")]
+        public virtual ICollection<Vote> Vote { get; set; }
     }
 }

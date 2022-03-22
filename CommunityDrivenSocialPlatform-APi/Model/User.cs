@@ -14,9 +14,11 @@ namespace CommunityDrivenSocialPlatform_APi.Model
     {
         public User()
         {
+            Comment = new HashSet<Comment>();
             Post = new HashSet<Post>();
             SubThread = new HashSet<SubThread>();
             SubThreadUser = new HashSet<SubThreadUser>();
+            Vote = new HashSet<Vote>();
         }
 
         [Key]
@@ -46,11 +48,15 @@ namespace CommunityDrivenSocialPlatform_APi.Model
         [ForeignKey(nameof(RoleId))]
         [InverseProperty("User")]
         public virtual Role Role { get; set; }
+        [InverseProperty("User")]
+        public virtual ICollection<Comment> Comment { get; set; }
         [InverseProperty("AuthorNavigation")]
         public virtual ICollection<Post> Post { get; set; }
         [InverseProperty("CreatorNavigation")]
         public virtual ICollection<SubThread> SubThread { get; set; }
         [InverseProperty("User")]
         public virtual ICollection<SubThreadUser> SubThreadUser { get; set; }
+        [InverseProperty("User")]
+        public virtual ICollection<Vote> Vote { get; set; }
     }
 }

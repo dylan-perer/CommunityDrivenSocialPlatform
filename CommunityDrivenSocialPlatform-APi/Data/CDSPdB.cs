@@ -20,6 +20,7 @@ namespace CommunityDrivenSocialPlatform_APi.Data
         {
         }
 
+        public virtual DbSet<Comment> Comment { get; set; }
         public virtual DbSet<Post> Post { get; set; }
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<SubThread> SubThread { get; set; }
@@ -40,6 +41,21 @@ namespace CommunityDrivenSocialPlatform_APi.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Comment>(entity =>
+            {
+                entity.HasOne(d => d.Post)
+                    .WithMany(p => p.Comment)
+                    .HasForeignKey(d => d.PostId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FKcomment637670");
+
+                entity.HasOne(d => d.User)
+                    .WithMany(p => p.Comment)
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FKcomment869114");
+            });
+
             modelBuilder.Entity<Post>(entity =>
             {
                 entity.Property(e => e.Title).IsUnicode(false);
@@ -48,13 +64,13 @@ namespace CommunityDrivenSocialPlatform_APi.Data
                     .WithMany(p => p.Post)
                     .HasForeignKey(d => d.Author)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FKPost233543");
+                    .HasConstraintName("FKpost280230");
 
                 entity.HasOne(d => d.SubThread)
                     .WithMany(p => p.Post)
                     .HasForeignKey(d => d.SubThreadId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FKPost301063");
+                    .HasConstraintName("FKpost347750");
             });
 
             modelBuilder.Entity<Role>(entity =>
@@ -65,7 +81,7 @@ namespace CommunityDrivenSocialPlatform_APi.Data
             modelBuilder.Entity<SubThread>(entity =>
             {
                 entity.HasIndex(e => e.Name)
-                    .HasName("UQ__sub_thre__72E12F1B4E7C7F3B")
+                    .HasName("UQ__sub_thre__72E12F1B388F59F5")
                     .IsUnique();
 
                 entity.Property(e => e.Name).IsUnicode(false);
@@ -80,7 +96,7 @@ namespace CommunityDrivenSocialPlatform_APi.Data
             modelBuilder.Entity<SubThreadRole>(entity =>
             {
                 entity.HasIndex(e => e.SubThreadRoleName)
-                    .HasName("UQ__sub_thre__AC26C15036EBD113")
+                    .HasName("UQ__sub_thre__AC26C150026A3A26")
                     .IsUnique();
 
                 entity.Property(e => e.SubThreadRoleName)
@@ -91,7 +107,7 @@ namespace CommunityDrivenSocialPlatform_APi.Data
             modelBuilder.Entity<SubThreadUser>(entity =>
             {
                 entity.HasKey(e => new { e.SubThreadId, e.UserId })
-                    .HasName("PK__sub_thre__24F7E31E5F8CC561");
+                    .HasName("PK__sub_thre__24F7E31E07D58D49");
 
                 entity.HasOne(d => d.SubThread)
                     .WithMany(p => p.SubThreadUser)
@@ -115,11 +131,11 @@ namespace CommunityDrivenSocialPlatform_APi.Data
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasIndex(e => e.EmailAddress)
-                    .HasName("UQ__user__20C6DFF54FAC8395")
+                    .HasName("UQ__user__20C6DFF5D77421C9")
                     .IsUnique();
 
                 entity.HasIndex(e => e.Username)
-                    .HasName("UQ__user__F3DBC5726283B325")
+                    .HasName("UQ__user__F3DBC572FC0AEC22")
                     .IsUnique();
 
                 entity.Property(e => e.EmailAddress).IsUnicode(false);
@@ -137,22 +153,20 @@ namespace CommunityDrivenSocialPlatform_APi.Data
 
             modelBuilder.Entity<Vote>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.HasOne(d => d.Post)
-                    .WithMany()
+                    .WithMany(p => p.Vote)
                     .HasForeignKey(d => d.PostId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FKvote89442");
+                    .HasConstraintName("FKvote136129");
 
                 entity.HasOne(d => d.User)
-                    .WithMany()
+                    .WithMany(p => p.Vote)
                     .HasForeignKey(d => d.UserId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FKvote904684");
 
                 entity.HasOne(d => d.VoteType)
-                    .WithMany()
+                    .WithMany(p => p.Vote)
                     .HasForeignKey(d => d.VoteTypeId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FKvote232645");
@@ -161,7 +175,7 @@ namespace CommunityDrivenSocialPlatform_APi.Data
             modelBuilder.Entity<VoteType>(entity =>
             {
                 entity.HasIndex(e => e.VoteTypeName)
-                    .HasName("UQ__vote_typ__75D83FD828393082")
+                    .HasName("UQ__vote_typ__75D83FD89F7F92D1")
                     .IsUnique();
 
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();

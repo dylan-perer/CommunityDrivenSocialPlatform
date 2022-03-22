@@ -25,8 +25,6 @@ namespace CommunityDrivenSocialPlatform_APi.Model
         [Column("name")]
         [StringLength(150)]
         public string Name { get; set; }
-        [Column("created_at", TypeName = "datetime")]
-        public DateTime CreatedAt { get; set; }
         [Required]
         [Column("description", TypeName = "text")]
         public string Description { get; set; }
@@ -35,6 +33,8 @@ namespace CommunityDrivenSocialPlatform_APi.Model
         public string WelcomeMessage { get; set; }
         [Column("creator")]
         public int Creator { get; set; }
+        [Column("created_at", TypeName = "datetime")]
+        public DateTime CreatedAt { get; set; }
 
         [ForeignKey(nameof(Creator))]
         [InverseProperty(nameof(User.SubThread))]
