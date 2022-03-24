@@ -1,5 +1,6 @@
 ﻿using CommunityDrivenSocialPlatform_APi.Data;
 using CommunityDrivenSocialPlatform_APi.Model;
+using CommunityDrivenSocialPlatform_APi.Model.Request;
 using CommunityDrivenSocialPlatform_APi.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -33,11 +34,11 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
 
             SubThread subThread = await GetSubThread(subthreadName);
             if (subThread == null)
-                return BadRequest(ConstantsService.NonExistentSubThread(subthreadName));
+                return BadRequest(Constants.NonExistentSubThread(subthreadName));
 
-            SubThreadUser subThreadUser = await DbContext.SubThreadUser.FirstOrDefaultAsync(r=> r.UserId==user.Id && r.SubThreadId==subThread.Id);//check if user is a memeber
+            SubThreadUser subThreadUser = await DbContext.SubThreadUser.FirstOrDefaultAsync(r => r.UserId == user.Id && r.SubThreadId == subThread.Id);//check if user is a memeber
             if (subThreadUser == null)
-                return BadRequest(ConstantsService.NotMemberOfSubthread(subthreadName));
+                return BadRequest(Constants.NotMemberOfSubthread(subthreadName));
 
             Post post = new Post
             {
@@ -60,18 +61,22 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
         public async Task<IActionResult> GetPostById([FromRoute] string subthreadName, [FromRoute] int id)
         {
             SubThread subThread = await GetSubThread(subthreadName);
-            if (subThread == null) 
-                return BadRequest(ConstantsService.NonExistentSubThread(subthreadName));
+            if (subThread == null)
+                return BadRequest(Constants.NonExistentSubThread(subthreadName));
 
             var innerJoin = DbContext.User.Join(DbContext.Post, tbl_user => tbl_user.Id, tbl_post => tbl_post.Author,
                 (tbl_user, tbl_post) => new { tbl_user, tbl_post })
                 .Select(c => new { c.tbl_post.Id, c.tbl_post.Title, c.tbl_post.Body, c.tbl_post.CreatedAt, c.tbl_post.SubThreadId, c.tbl_user.Username })
                 .Where(r => r.Id == id && r.SubThreadId == subThread.Id);
 
-            List<GetPostRequest> list = new List<GetPostRequest>();
+            //get votes
+
+            //get comments
+
+            List<PostDetailsResponse> list = new List<PostDetailsResponse>();
             foreach (var item in innerJoin)
             {
-                list.Add(new GetPostRequest
+                list.Add(new PostDetailsResponse
                 {
                     Title = item.Title,
                     Body = item.Body,
@@ -81,7 +86,7 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
             }
 
             if (innerJoin == null || list.Count == 0)
-                return BadRequest(ConstantsService.NonExistentPost(id,subthreadName));
+                return BadRequest(Constants.NonExistentPost(id, subthreadName));
 
             return Ok(list.ElementAt(0));
         }
@@ -92,17 +97,17 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
         {
             SubThread subThread = await GetSubThread(subthreadName);
             if (subThread == null)
-                return BadRequest(ConstantsService.NonExistentSubThread(subthreadName));
+                return BadRequest(Constants.NonExistentSubThread(subthreadName));
 
             var innerJoin = DbContext.User.Join(DbContext.Post, tbl_user => tbl_user.Id, tbl_post => tbl_post.Author,
                 (tbl_user, tbl_post) => new { tbl_user, tbl_post })
                 .Select(c => new { c.tbl_post.Id, c.tbl_post.Title, c.tbl_post.Body, c.tbl_post.CreatedAt, c.tbl_post.SubThreadId, c.tbl_user.Username })
                 .Where(r => r.SubThreadId == subThread.Id);
 
-            List<GetPostRequest> list = new List<GetPostRequest>();
+            List<PostDetailsResponse> list = new List<PostDetailsResponse>();
             foreach (var item in innerJoin)
             {
-                list.Add(new GetPostRequest
+                list.Add(new PostDetailsResponse
                 {
                     Title = item.Title,
                     Body = item.Body,
@@ -112,7 +117,7 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
             }
 
             if (innerJoin == null || list.Count == 0)
-                return BadRequest(ConstantsService.NonExistentSubThread(subthreadName));
+                return BadRequest(Constants.NonExistentSubThread(subthreadName));
 
             return Ok(list);
         }
@@ -126,11 +131,11 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
 
             SubThread subThread = await GetSubThread(subthreadName);
             if (subThread == null)
-                return BadRequest(ConstantsService.NonExistentSubThread(subthreadName));
+                return BadRequest(Constants.NonExistentSubThread(subthreadName));
 
             Post post = await DbContext.Post.FirstOrDefaultAsync(r => r.Author == user.Id);
             if (post == null)
-                return BadRequest(ConstantsService.NotTheAuthorOfPost);
+                return BadRequest(Constants.NotTheAuthorOfPost);
 
             updatePostRequest.Id = post.Id;
             post.Title = updatePostRequest.Title;
@@ -151,16 +156,16 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
 
             SubThread subThread = await GetSubThread(subthreadName);
             if (subThread == null)
-                return BadRequest(ConstantsService.NonExistentSubThread(subthreadName));
+                return BadRequest(Constants.NonExistentSubThread(subthreadName));
 
             Post post = await DbContext.Post.FirstOrDefaultAsync(r => r.Id == deletePostRequest.Id && r.Author == user.Id);
             if (post == null)
-                return BadRequest(ConstantsService.NotTheAuthorOfPost);
+                return BadRequest(Constants.NotTheAuthorOfPost);
 
             DbContext.Remove(post);
             await DbContext.SaveChangesAsync();
 
-            return Ok(ConstantsService.PostDeleted);
+            return Ok(Constants.PostDeleted);
         }
 
         //:: handles voting :://
@@ -173,9 +178,9 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
             Post post = await GetPost(voteRequest.Id);
 
             if (subThread == null)
-                return BadRequest(ConstantsService.NonExistentSubThread(subthreadName));
+                return BadRequest(Constants.NonExistentSubThread(subthreadName));
             if (post == null)
-                return BadRequest(ConstantsService.NonExistentPost(voteRequest.Id));
+                return BadRequest(Constants.NonExistentPost(voteRequest.Id));
 
 
             Vote vote = await DbContext.Vote.FirstOrDefaultAsync(r => r.UserId == user.Id && r.PostId == voteRequest.Id);
@@ -184,7 +189,7 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
                 vote.VoteTypeId = voteRequest.VoteType;
                 DbContext.Update(vote);
                 await DbContext.SaveChangesAsync();
-                return Ok(ConstantsService.VoteSuccess);
+                return Ok(Constants.VoteSuccess);
             }
 
             vote = new Vote
@@ -196,103 +201,99 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
 
             DbContext.Add(vote);
             await DbContext.SaveChangesAsync();
-            return Ok(ConstantsService.VoteSuccess);
+            return Ok(Constants.VoteSuccess);
         }
 
+        //Get all comments on a post  body, author, created at
 
-        //comments:: TODO
+        //:: handles creating comments :://
         [Authorize]
-        [HttpPost("comment")]
-        public async Task<IActionResult> CreateComment([FromRoute]string subthreadName,[FromBody]CreateCommentRequest createCommentRequest)
+        [HttpPost("{postId}/comment")]
+        public async Task<IActionResult> CreateComment([FromRoute] int postId, [FromRoute] string subthreadName, [FromBody] CreateCommentRequest createCommentRequest)
         {
             User user = await GetLoggedUser();
             SubThread subThread = await GetSubThread(subthreadName);
-            Post post = await GetPost(createCommentRequest.PostId);
+            Post post = await GetPost(postId);
 
             if (subThread == null)
-                return BadRequest(ConstantsService.NonExistentSubThread(subthreadName));
+                return BadRequest(Constants.NonExistentSubThread(subthreadName));
             if (post == null)
-                return BadRequest(ConstantsService.NonExistentPost(createCommentRequest.PostId));
+                return BadRequest(Constants.NonExistentPost(postId));
 
             SubThreadUser subThreadUser = await DbContext.SubThreadUser.FirstOrDefaultAsync(r => r.UserId == user.Id && r.SubThreadId == subThread.Id);//check if user is a memeber
             if (subThreadUser == null)
-                return BadRequest(ConstantsService.NotMemberOfSubthread(subthreadName));
+                return BadRequest(Constants.NotMemberOfSubthread(subthreadName));
 
-            return Ok();
+            Comment comment = new Comment
+            {
+                PostId = postId,
+                UserId = user.Id,
+                Body = createCommentRequest.Body,
+                CreatedAt = createCommentRequest.CreatedAt,
+            };
+
+            await DbContext.Comment.AddAsync(comment);
+            await DbContext.SaveChangesAsync();
+
+            return Ok(Constants.CommentMadeSuccessfully);
         }
 
-        //del comment
-        //update comment
-
-
-        public class CreatePostRequest
+        //:: handles updating comments :://
+        [Authorize]
+        [HttpPut("comment")]
+        public async Task<IActionResult> UpdateComment([FromRoute] string subthreadName, [FromBody] UpdateCommentRequest updateCommentRequest)
         {
-            [Required(ErrorMessage = "Sorry, post title is required.")]
-            [MinLength(3, ErrorMessage = "Sorry, post title must be atleast 3 characters long.")]
-            [MaxLength(255, ErrorMessage = "Sorry, post title must not be longer than 255 characters long.")]
-            public string Title { get; set; }
+            User user = await GetLoggedUser();
+            Comment comment = await GetComment(updateCommentRequest.CommentId);
+            if (comment == null)
+                return BadRequest(Constants.NonExistentComment);
 
-            [Required(ErrorMessage = "Sorry, post body is required.")]
-            [MinLength(3, ErrorMessage = "Sorry, post body must be atleast 3 characters long.")]
-            public string Body { get; set; }
-            public DateTime CreatedAt { get; set; } = DateTime.Now;
-            public int Id { get; set; }
+            SubThread subThread = await GetSubThread(subthreadName);
+            Post post = await GetPost(comment.PostId);
+
+            if (subThread == null)
+                return BadRequest(Constants.NonExistentSubThread(subthreadName));
+            if (post == null)
+                return BadRequest(Constants.NonExistentPost(comment.PostId));
+
+            if (comment.UserId != user.Id)
+                return BadRequest(Constants.NotTheAuthorOfComment);
+
+            comment.Body = updateCommentRequest.Body;
+            
+            DbContext.Comment.Update(comment);
+            await DbContext.SaveChangesAsync();
+
+            return Ok(Constants.CommentUpdatedSuccessfully);
         }
 
-        public class UpdatePostRequest
+        //:: handles updating comments :://
+        [Authorize]
+        [HttpDelete("comment")]
+        public async Task<IActionResult> DeleteComment([FromRoute] string subthreadName, [FromBody] UpdateCommentRequest updateCommentRequest)
         {
-            [Required(ErrorMessage = "Sorry, post id is required.")]
-            [RegularExpression("[1-9]+", ErrorMessage = "Sorry id must be a number and cannot be 0.")]
-            public int Id { get; set; }
-            [Required(ErrorMessage = "Sorry, post title is required.")]
-            [MinLength(3, ErrorMessage = "Sorry, post title must be atleast 3 characters long.")]
-            [MaxLength(255, ErrorMessage = "Sorry, post title must not be longer than 255 characters long.")]
-            public string Title { get; set; }
+            User user = await GetLoggedUser();
+            Comment comment = await GetComment(updateCommentRequest.CommentId);
+            if (comment == null)
+                return BadRequest(Constants.NonExistentComment);
 
-            [Required(ErrorMessage = "Sorry, post body is required.")]
-            [MinLength(3, ErrorMessage = "Sorry, post body must be atleast 3 characters long.")]
-            public string Body { get; set; }
+            SubThread subThread = await GetSubThread(subthreadName);
+            Post post = await GetPost(comment.PostId);
+
+            if (subThread == null)
+                return BadRequest(Constants.NonExistentSubThread(subthreadName));
+            if (post == null)
+                return BadRequest(Constants.NonExistentPost(comment.PostId));
+
+            if (comment.UserId != user.Id)
+                return BadRequest(Constants.NotTheAuthorOfComment);
+
+            DbContext.Comment.Remove(comment);
+            await DbContext.SaveChangesAsync();
+
+            return Ok(Constants.CommentDeletedSuccessfully);
         }
 
-        public class GetPostRequest
-        {
-            public int Id { get; set; }
-            public string Title { get; set; }
-            public string Body { get; set; }
-            public string Author { get; set; }
-            public int Votes { get; set; }
-        }
-
-        public class DeletePostRequest
-        {
-            [Required(ErrorMessage = "Sorry, post id is required.")]
-            public int? Id { get; set; }
-        }
-
-        public class VoteRequest
-        {
-            [Required(ErrorMessage = "Sorry, post id is required.")]
-            [RegularExpression("[1-9]+", ErrorMessage = "Sorry id must be a number and cannot be 0.")]
-            public int Id { get; set; }
-            [Required(ErrorMessage = "Sorry, post vote type is required.")]
-            [RegularExpression("(1|2)", ErrorMessage = "Sorry, vote value must be '1' or '2'.")]
-            public byte VoteType { get; set; }
-        }
-
-        public class CreateCommentRequest
-        {
-            [Required(ErrorMessage = "Sorry, user id is required.")]
-            [RegularExpression("[1-9]+", ErrorMessage = "Sorry id must be a number and cannot be 0.")]
-            public int UserId { get; set; }
-
-            [Required(ErrorMessage = "Sorry, post id is required.")]
-            [RegularExpression("[1-9]+", ErrorMessage = "Sorry id must be a number and cannot be 0.")]
-            public int PostId { get; set; }
-
-            [Required(ErrorMessage ="Sorry, comment body cannot be empty.")]
-            public string Body { get; set; }
-            public DateTime CreatedAt { get; set; } = DateTime.Now;
-        }
 
         public async Task<User> GetLoggedUser()
         {
@@ -306,6 +307,11 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
         public async Task<Post> GetPost(int id)
         {
             return await DbContext.Post.FirstOrDefaultAsync(r => r.Id == id);
+        }
+
+        public async Task<Comment> GetComment(int id)
+        {
+            return await DbContext.Comment.FirstOrDefaultAsync(r => r.Id == id);
         }
     }
 }

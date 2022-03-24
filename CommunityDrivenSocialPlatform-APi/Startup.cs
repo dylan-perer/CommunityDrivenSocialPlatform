@@ -65,6 +65,7 @@ namespace CommunityDrivenSocialPlatform_APi
 
             app.UseRouting();
 
+
             app.UseAuthentication();
 
             app.UseAuthorization();

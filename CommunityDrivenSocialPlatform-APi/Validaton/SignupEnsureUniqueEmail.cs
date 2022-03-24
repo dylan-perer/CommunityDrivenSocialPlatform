@@ -1,8 +1,6 @@
 ﻿using CommunityDrivenSocialPlatform_APi.Data;
-using CommunityDrivenSocialPlatform_APi.Model;
+using CommunityDrivenSocialPlatform_APi.Model.Requests;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using static CommunityDrivenSocialPlatform_APi.Controllers.AuthenticateController;
 
 namespace CommunityDrivenSocialPlatform_APi.Validaton
 {
@@ -10,7 +8,7 @@ namespace CommunityDrivenSocialPlatform_APi.Validaton
     {
         protected override ValidationResult IsValid(object value, ValidationContext validationContext)
         {
-            signupRequest user = validationContext.ObjectInstance as signupRequest;
+            SignupRequest user = validationContext.ObjectInstance as SignupRequest;
             CDSPdB dbContext = (CDSPdB)validationContext.GetService(typeof(CDSPdB));
 
             return new EmailUnique().validate(dbContext, user.EmailAddress);

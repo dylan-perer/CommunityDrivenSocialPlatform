@@ -81,7 +81,7 @@ namespace CommunityDrivenSocialPlatform_APi.Data
             modelBuilder.Entity<SubThread>(entity =>
             {
                 entity.HasIndex(e => e.Name)
-                    .HasName("UQ__sub_thre__72E12F1B388F59F5")
+                    .HasName("UQ__sub_thre__72E12F1BDB5C7C11")
                     .IsUnique();
 
                 entity.Property(e => e.Name).IsUnicode(false);
@@ -96,7 +96,7 @@ namespace CommunityDrivenSocialPlatform_APi.Data
             modelBuilder.Entity<SubThreadRole>(entity =>
             {
                 entity.HasIndex(e => e.SubThreadRoleName)
-                    .HasName("UQ__sub_thre__AC26C150026A3A26")
+                    .HasName("UQ__sub_thre__AC26C15042BE4ED5")
                     .IsUnique();
 
                 entity.Property(e => e.SubThreadRoleName)
@@ -107,7 +107,7 @@ namespace CommunityDrivenSocialPlatform_APi.Data
             modelBuilder.Entity<SubThreadUser>(entity =>
             {
                 entity.HasKey(e => new { e.SubThreadId, e.UserId })
-                    .HasName("PK__sub_thre__24F7E31E07D58D49");
+                    .HasName("PK__sub_thre__24F7E31EFFB2C2A7");
 
                 entity.HasOne(d => d.SubThread)
                     .WithMany(p => p.SubThreadUser)
@@ -131,11 +131,11 @@ namespace CommunityDrivenSocialPlatform_APi.Data
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasIndex(e => e.EmailAddress)
-                    .HasName("UQ__user__20C6DFF5D77421C9")
+                    .HasName("UQ__user__20C6DFF5EEDA9125")
                     .IsUnique();
 
                 entity.HasIndex(e => e.Username)
-                    .HasName("UQ__user__F3DBC572FC0AEC22")
+                    .HasName("UQ__user__F3DBC5723A2608B2")
                     .IsUnique();
 
                 entity.Property(e => e.EmailAddress).IsUnicode(false);
@@ -175,7 +175,7 @@ namespace CommunityDrivenSocialPlatform_APi.Data
             modelBuilder.Entity<VoteType>(entity =>
             {
                 entity.HasIndex(e => e.VoteTypeName)
-                    .HasName("UQ__vote_typ__75D83FD89F7F92D1")
+                    .HasName("UQ__vote_typ__75D83FD8319E7B35")
                     .IsUnique();
 
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();

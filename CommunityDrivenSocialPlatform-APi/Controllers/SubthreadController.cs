@@ -1,17 +1,14 @@
 ﻿using CommunityDrivenSocialPlatform_APi.Data;
+using CommunityDrivenSocialPlatform_APi.Data.Request;
+using CommunityDrivenSocialPlatform_APi.Data.Response;
 using CommunityDrivenSocialPlatform_APi.Model;
+using CommunityDrivenSocialPlatform_APi.Model.Request;
 using CommunityDrivenSocialPlatform_APi.Service;
-using CommunityDrivenSocialPlatform_APi.Validaton.Subthread;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Nancy.Json;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
@@ -20,7 +17,7 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class SubthreadController : ControllerBase 
+    public class SubthreadController : ControllerBase
     {
         private readonly CDSPdB dbContext;
         public SubthreadController(CDSPdB dbContext)
@@ -76,78 +73,54 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
         public async Task<IActionResult> CreateSubthread([FromBody] CreateSubThreadRequest createSubThreadRequest)
         {
             User user = await GetLoggedUser();
-            if (user != null)
-            {
-                try
-                {
-                    SubThread subThread = new SubThread
-                    {//creating thread
-                        Name = createSubThreadRequest.Name,
-                        Description = createSubThreadRequest.Description,
-                        WelcomeMessage = createSubThreadRequest.WelcomeMessage,
-                        Creator = user.Id,
-                        CreatedAt = DateTime.Now
-                    };
-                    dbContext.SubThread.Add(subThread);
-                    await dbContext.SaveChangesAsync();
+            SubThread subThread = new SubThread
+            {//creating thread
+                Name = createSubThreadRequest.Name,
+                Description = createSubThreadRequest.Description,
+                WelcomeMessage = createSubThreadRequest.WelcomeMessage,
+                Creator = user.Id,
+                CreatedAt = DateTime.Now,
+            };
 
-                    SubThreadUser subThreadUser = new SubThreadUser
-                    {//giving creator of the subthread moderator role
-                        SubThreadId = subThread.Id,
-                        UserId = user.Id,
-                        SubThreadRoleId = (int)SubthreadRoleEnum.MODERATOR,
-                    };
-                    dbContext.SubThreadUser.Add(subThreadUser);
-                    await dbContext.SaveChangesAsync();
+            subThread.SubThreadUser.Add(new SubThreadUser
+            {//giving creator of the subthread moderator role
+                SubThreadId = subThread.Id,
+                UserId = user.Id,
+                SubThreadRoleId = (int)SubthreadRoleEnum.MODERATOR,
+            });
 
-                    return Ok(createSubThreadRequest);
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest("Sorry, that is malformed request. Please try again.");
-                }
-            }
-            return BadRequest("Sorry, that is invalid request. Please try again.");
+            dbContext.SubThread.Add(subThread);
+            await dbContext.SaveChangesAsync();
+
+            return Ok(createSubThreadRequest);
         }
 
         //:: handles updating a subthread :://
         [Authorize]
         [HttpPut("{name}")]
-        public async Task<IActionResult> UpdateByName([FromRoute]string name,[FromBody] UpdateSubThreadRequest updateSubThreadRequest)
+        public async Task<IActionResult> UpdateByName([FromRoute] string name, [FromBody] UpdateSubThreadRequest updateSubThreadRequest)
         {
+            User user = await GetLoggedUser();
+
             SubThread subThread = await GetSubThread(name);
             if (subThread == null)
-                return BadRequest($"Sorry, no subthread with the name '{name}' exists.");
+                return BadRequest(Constants.SubthreadUpdatedSuccessfully);
 
-            if (updateSubThreadRequest != null)
+            SubThreadUser subThreadUser = await dbContext.SubThreadUser.FirstOrDefaultAsync(
+                r => r.SubThreadId == subThread.Id
+                && r.UserId == user.Id
+                && r.SubThreadRoleId == (int)SubthreadRoleEnum.MODERATOR);
+
+            if (subThreadUser != null)
             {
-                try
-                {
-                    User user = await GetLoggedUser();
-                    if (user != null)
-                    {
-                        SubThreadUser subThreadUser = await dbContext.SubThreadUser.FirstOrDefaultAsync(
-                            r => r.SubThreadId == subThread.Id
-                            && r.UserId == user.Id
-                            && r.SubThreadRoleId == (int)SubthreadRoleEnum.MODERATOR);
-                        if (subThreadUser != null)
-                        {
-                            subThread.Description = updateSubThreadRequest.Description;
-                            subThread.WelcomeMessage = updateSubThreadRequest.WelcomeMessage;
+                subThread.Description = updateSubThreadRequest.Description;
+                subThread.WelcomeMessage = updateSubThreadRequest.WelcomeMessage;
 
-                            dbContext.SubThread.Update(subThread);
-                            await dbContext.SaveChangesAsync();
-                            return Ok(updateSubThreadRequest);
-                        }
-                        return BadRequest($"Sorry, you don't have the authorization to edit '{name}' subthread");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest("Sorry, That is a invalid request. Please try again.");
-                }
+                dbContext.SubThread.Update(subThread);
+                await dbContext.SaveChangesAsync();
+                return Ok(updateSubThreadRequest);
             }
-            return BadRequest("Sorry, request body cannot be null.");
+            return BadRequest(Constants.NotAuthorizedToEditSubthread(name));
         }
 
         //:: handles deleting a subthread :://
@@ -156,25 +129,17 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
         public async Task<IActionResult> DeleteByName([FromRoute] string name)
         {
             User user = await GetLoggedUser();
-            if (user != null)
+            SubThread subThread = await GetSubThread(name);
+            if (subThread == null)
+                return BadRequest(Constants.NonExistentSubThread(name));
+
+            if (user.Id == subThread.Creator)
             {
-                SubThread subThread = await GetSubThread(name);
-                if (subThread == null)
-                    return BadRequest($"Sorry, no subthread with the name '{name}' exists");
-
-                if (subThread != null && user.Id == subThread.Creator)
-                {
-                    SubThreadUser subThreadUser = await dbContext.SubThreadUser.FirstOrDefaultAsync(r => r.SubThreadId == subThread.Id && r.UserId == user.Id);
-                    dbContext.SubThreadUser.Remove(subThreadUser);
-                    await dbContext.SaveChangesAsync();
-
-                    dbContext.SubThread.Remove(subThread);
-                    await dbContext.SaveChangesAsync();
-                    return Ok($"subthread '{name}' was successfully deleted.");
-                }
-                return BadRequest($"Sorry, only the creator of the subthread can delete.");
+                dbContext.SubThread.Remove(subThread);
+                await dbContext.SaveChangesAsync();
+                return Ok(Constants.SubthreadDeletedSuccessfully);
             }
-            return BadRequest("Sorry, that is invalid request. Please try again.");
+            return BadRequest(Constants.NoAuthorization);
         }
 
         //:: handles joining a subthread :://
@@ -185,24 +150,23 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
             User user = await GetLoggedUser();
 
             SubThread subThread = await GetSubThread(name);
-            if (subThread != null)
-            {
-                SubThreadUser subThreadUser = await dbContext.SubThreadUser.FirstOrDefaultAsync(r=> r.SubThreadId==subThread.Id && r.UserId == user.Id);
-                if (subThreadUser != null)
-                {
-                    return Ok($"You are already a member of '{name}' subthread!");
-                }
-                dbContext.SubThreadUser.Add(new SubThreadUser
-                {
-                    SubThreadId = subThread.Id,
-                    UserId = user.Id,
-                    SubThreadRoleId = subThread.Creator == user.Id ? (int)SubthreadRoleEnum.MODERATOR : (int)SubthreadRoleEnum.USER
-                });
-                await dbContext.SaveChangesAsync();
-                return Ok($"You have joined '{name}' subthread!");
+            if (subThread == null)
+                return BadRequest(Constants.NonExistentSubThread(name));
 
-            }
-            return BadRequest($"Sorry, subthread with the name '{name}' does not exist.");
+            SubThreadUser subThreadUser = await dbContext.SubThreadUser.FirstOrDefaultAsync(r => r.SubThreadId == subThread.Id && r.UserId == user.Id);
+
+            if (subThreadUser != null)
+                return Ok(Constants.AlreadyMemberOfSubthread(name));
+
+            dbContext.SubThreadUser.Add(new SubThreadUser
+            {
+                SubThreadId = subThread.Id,
+                UserId = user.Id,
+                SubThreadRoleId = subThread.Creator == user.Id ? (int)SubthreadRoleEnum.MODERATOR : (int)SubthreadRoleEnum.USER
+            });
+
+            await dbContext.SaveChangesAsync();
+            return Ok(Constants.JoinedNewSubthread(name));
         }
 
         //:: handles leaving a subthread :://
@@ -212,37 +176,38 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
         {
             User user = await GetLoggedUser();
             SubThread subThread = await GetSubThread(name);
+            if (subThread == null)
+                return BadRequest(Constants.NonExistentSubThread(name));
+
+            SubThreadUser subThreadUser = await dbContext.SubThreadUser.FirstOrDefaultAsync(r => r.SubThreadId == subThread.Id && r.UserId == user.Id);
             
-            if (subThread != null)
+            if (subThreadUser != null)
             {
-                SubThreadUser subThreadUser = await dbContext.SubThreadUser.FirstOrDefaultAsync(r => r.SubThreadId == subThread.Id && r.UserId == user.Id);
-                if (subThreadUser != null)
-                {
-                    dbContext.SubThreadUser.Remove(subThreadUser);
-                    await dbContext.SaveChangesAsync();
-                    return Ok($"You are no longer a member of '{name}' subthread!");
-                }
-                return Ok($"You are not a member of '{name}' subthread to leave!");
+                dbContext.SubThreadUser.Remove(subThreadUser);
+                await dbContext.SaveChangesAsync();
+                return Ok(Constants.LeftSubthread(name));
             }
-            return BadRequest($"Sorry, subthread with the name '{name}' does not exist.");
+
+            return Ok(Constants.NotMemberOfSubthread(name));
         }
 
         //:: handles returning all joined users of a subthread :://
         [HttpGet("{name}/users")]
-        public async Task<IActionResult> GetAllUsers([FromRoute]string name)
+        public async Task<IActionResult> GetAllUsers([FromRoute] string name)
         {
-            SubThread subThread = await dbContext.SubThread.FirstOrDefaultAsync(r=> r.Name == name);
-            if (subThread != null) {
+            SubThread subThread = await dbContext.SubThread.FirstOrDefaultAsync(r => r.Name == name);
+            if (subThread != null)
+            {
                 var innerJoin = dbContext.User.Join(dbContext.SubThreadUser, tbl_user => tbl_user.Id, tbl_sub_thread_user => tbl_sub_thread_user.UserId,
                     (tbl_user, tbl_sub_thread_user) => new { tbl_user, tbl_sub_thread_user })
                     .Select(c => new { c.tbl_user.Username, c.tbl_sub_thread_user.SubThreadRoleId, c.tbl_sub_thread_user.SubThreadId }).Where(r => r.SubThreadId == subThread.Id);
 
-                List<SubThreadUserRequest> subThreadUserRequests = new List<SubThreadUserRequest>();
+                List<SubThreadUserDetailResponse> subThreadUserRequests = new List<SubThreadUserDetailResponse>();
                 if (subThreadUserRequests != null)
                 {
                     foreach (var item in innerJoin)
                     {
-                        subThreadUserRequests.Add(new SubThreadUserRequest
+                        subThreadUserRequests.Add(new SubThreadUserDetailResponse
                         {
                             Username = item.Username,
                             RoleId = item.SubThreadRoleId
@@ -258,48 +223,16 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
             return BadRequest($"Sorry, subthread with the name '{name}' does not exist.");
         }
 
-        public class CreateSubThreadRequest
-        {
-            [EnsureUniqueSubthreadName]
-            [StringLength(150, ErrorMessage = "Sorry, subthread name must be less than 150 characters. Please try again.")]
-            public string Name { get; set; }
-
-            [Required(ErrorMessage = "Sorry, description is required. Please add a description and try again.")]
-            public string Description { get; set; }
-
-            [Required(ErrorMessage = "Sorry, welcome message is required. Please add a welcome message and try again.")]
-            public string WelcomeMessage { get; set; }
-        }
-
-        public class SubThreadDetailRequest
-        {
-            public string Name { get; set; }
-            public string Description { get; set; }
-            public string WelcomeMessage { get; set; }
-        }
-
-        public class UpdateSubThreadRequest
-        {
-            public string Description { get; set; }
-            public string WelcomeMessage { get; set; }
-        }
-
-        public class SubThreadUserRequest
-        {
-            public string Username { get; set; }
-            public int RoleId { get; set; }
-        }
-
         public async Task<User> GetLoggedUser()
         {
-             string loggedUser = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-             return await dbContext.User.FirstOrDefaultAsync(r => r.Username == loggedUser);
+            string loggedUser = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            return await dbContext.User.FirstOrDefaultAsync(r => r.Username == loggedUser);
         }
 
         public async Task<SubThread> GetSubThread(string name)
         {
             return await dbContext.SubThread.FirstOrDefaultAsync(r => r.Name == name);
-        } 
+        }
     }
 
 }

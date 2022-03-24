@@ -19,10 +19,11 @@ namespace CommunityDrivenSocialPlatform_APi.Model
         public int PostId { get; set; }
         [Column("user_id")]
         public int UserId { get; set; }
-        [Column("body")]
-        public int Body { get; set; }
-        [Column("created_at")]
-        public int CreatedAt { get; set; }
+        [Required]
+        [Column("body", TypeName = "text")]
+        public string Body { get; set; }
+        [Column("created_at", TypeName = "datetime")]
+        public DateTime CreatedAt { get; set; }
 
         [ForeignKey(nameof(PostId))]
         [InverseProperty("Comment")]

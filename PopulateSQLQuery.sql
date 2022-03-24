@@ -8,6 +8,8 @@ INSERT INTO [dbo].[sub_thread_role]([sub_thread_role_name]) VALUES ('USER'), ('M
 INSERT INTO [vote_type] VALUES ('UPVOTE'), ('DOWNVOTE');
 
 
+/*
+
 INSERT INTO [dbo].[User]
            ([username]
 		   ,[email_address]
@@ -34,7 +36,6 @@ INSERT INTO [dbo].[sub_thread]
 		('sub2', 'desc', 'welcomemsg', '2022-03-30', '1'),
 		('sub3', 'desc', 'welcomemsg', '2022-03-30', '2');
 
-
 INSERT INTO [Post]
 	([title]
 	,[body]
@@ -44,4 +45,29 @@ INSERT INTO [Post]
 	VALUES
 		('post1', 'body', '1', '1', '2022-03-30'),
 		('post2', 'body', '1', '1','2022-03-30'),
-		('post3', 'body', '2', '1','2022-03-30');
+		('post3', 'body', '2', '1','2022-03-30'),
+		('post1', 'body', '1', '2', '2022-03-30'),
+		('post2', 'body', '1', '2','2022-03-30'),
+		('post3', 'body', '2', '3','2022-03-30');
+
+INSERT INTO [vote]
+	([user_id],
+	[post_id],
+	[vote_type_id])
+	VALUES
+		('1', '2', '1'),
+		('1', '1', '1'),
+		('2', '1', '1'),
+		('3', '2', '1');
+
+INSERT INTO [comment]
+	([user_id],
+	[post_id],
+	[body],
+	[created_at])
+	VALUES
+		('1', '2', 'commentbody', '2022-03-03'),
+		('1', '1', 'commentbody', '2022-03-03'),
+		('2', '1', 'commentbody', '2022-03-03'),
+		('3', '2', 'commentbody', '2022-03-03');
+		*/

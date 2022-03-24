@@ -1,6 +1,5 @@
 ﻿using CommunityDrivenSocialPlatform_APi.Data;
 using CommunityDrivenSocialPlatform_APi.Model;
-using CommunityDrivenSocialPlatform_APi.Validaton;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +7,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using System.ComponentModel.DataAnnotations;
+using CommunityDrivenSocialPlatform_APi.Model.Request;
+using CommunityDrivenSocialPlatform_APi.Model.Response;
 
 namespace CommunityDrivenSocialPlatform_APi.Controllers
 {
@@ -29,10 +29,10 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
             List<User> users = await DbContext.User.ToListAsync();
             if (users != null)
             {
-                List<UserDetail> usersDetails = new List<UserDetail>();
+                List<UserDetailResponse> usersDetails = new List<UserDetailResponse>();
                 foreach (User user in users)
                 {
-                    usersDetails.Add(new UserDetail
+                    usersDetails.Add(new UserDetailResponse
                     {
                         Username = user.Username,
                         Description = user.Description,
@@ -52,7 +52,7 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
             User user = await DbContext.User.FirstOrDefaultAsync(r => r.Username == username);
             if (user != null)
             {
-                UserDetail userDetail = new UserDetail
+                UserDetailResponse userDetail = new UserDetailResponse
                 {
                     Username = user.Username,
                     Description = user.Description,
@@ -89,21 +89,9 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
             return BadRequest("Sorry, that is a malformed request.");
         }
 
-    }
-    public class UserDetail
-    {
-        public string Username { get; set; }
-        public string Description { get; set; }
-        public string ProfilePictureUrl { get; set; }
-    }
 
-    public class UpdateUserDetailsRequest
-    {
-        public string Description { get; set; }
-        public string ProfilePictureUrl { get; set; }
-        [UserSignupEnsureUniqueEmail]
-        [EmailAddress]
-        public string EmailAddress { get; set; }
+/*        //:: handles getting posts user made :://
+        [HttpGet("{username}/{posts}")]*/
     }
 }
 

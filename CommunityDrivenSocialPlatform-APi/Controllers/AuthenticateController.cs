@@ -1,13 +1,12 @@
 ﻿using CommunityDrivenSocialPlatform_APi.Data;
 using CommunityDrivenSocialPlatform_APi.Model;
-using CommunityDrivenSocialPlatform_APi.Validaton;
+using CommunityDrivenSocialPlatform_APi.Model.Requests;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System;
-using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
@@ -33,10 +32,10 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
         //:: handles loggin in and generating a jwt token :://
         [AllowAnonymous]
         [HttpPost]
-        public async Task<IActionResult> Login([FromBody] loginRequest userLogin)//logs user in & generate token
+        public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)//logs user in & generate token
         {
             //Authenticate user
-            User user = await Authenticate(userLogin);
+            User user = await Authenticate(loginRequest);
 
             //generate token
             if (user != null)
@@ -50,7 +49,7 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
         //:: handles signing up a user :://
         [AllowAnonymous]
         [HttpPost("signup")]
-        public async Task<IActionResult> Signup([FromBody] signupRequest userSignup)
+        public async Task<IActionResult> Signup([FromBody] SignupRequest userSignup)
         {
             if (userSignup != null)
             {
@@ -86,11 +85,11 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
         }
 
         //:: handles calling datasource to authenticate a user :://
-        private async Task<User> Authenticate(loginRequest userLogin)
+        private async Task<User> Authenticate(LoginRequest loginRequest)
         {
-            if (userLogin != null)
+            if (loginRequest != null)
             {
-                User user = await DbContext.User.FirstOrDefaultAsync(user => user.Username == userLogin.Username && user.Password == userLogin.Password);
+                User user = await DbContext.User.FirstOrDefaultAsync(user => user.Username == loginRequest.Username && user.Password == loginRequest.Password);
                 if (user != null)
                 {
                     Debug.WriteLine($"User found {user.Id}, {user.Username}");
@@ -99,43 +98,6 @@ namespace CommunityDrivenSocialPlatform_APi.Controllers
             }
             return null;
 
-        }
-
-        public class signupRequest
-        {
-            [SignupEnsureUniqueUsername]
-            public string Username { get; set; }
-            public string Password { get; set; }
-
-            [SignupEnsureUniqueEmail]
-            public string EmailAddress { get; set; }
-            public string ProfilePictureUrl { get; set; } = null;
-
-            public User createUser()
-            {
-                return new User
-                {//map usersignup object to user model
-                    Username = this.Username,
-                    Password = this.Password,
-                    EmailAddress = this.EmailAddress,
-                    ProfilePictureUrl = this.ProfilePictureUrl,
-
-                    CreatedAt = DateTime.Now,
-                    RoleId = (int)RoleEnum.USER
-                };
-            }
-        }
-
-        public class loginRequest
-        {
-            [Required(ErrorMessage = "Username is required.")]
-            [MinLength(3, ErrorMessage ="Sorry username must be atleast 3 characters long.")]
-            [MaxLength(100, ErrorMessage ="Sorry username must not be more than 100 characters long.")]
-            public string Username { get; set; }
-
-            [MinLength(3, ErrorMessage = "Sorry username must be atleast 3 characters long.")]
-            [MaxLength(255, ErrorMessage ="Sorry password must not be more than 255 characters long.")]
-            public string Password { get; set; }
         }
 
     }

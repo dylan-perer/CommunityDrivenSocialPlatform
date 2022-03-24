@@ -1,5 +1,5 @@
-﻿using CommunityDrivenSocialPlatform_APi.Controllers;
-using CommunityDrivenSocialPlatform_APi.Data;
+﻿using CommunityDrivenSocialPlatform_APi.Data;
+using CommunityDrivenSocialPlatform_APi.Model.Request;
 using System.ComponentModel.DataAnnotations;
 
 namespace CommunityDrivenSocialPlatform_APi.Validaton
