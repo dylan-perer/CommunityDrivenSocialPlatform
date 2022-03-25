@@ -7,8 +7,8 @@ namespace CDSP_API.Services
 {
     public interface IIdentityService
     {
-        public Task<AuthResult> SigninAsync(User user);
-        public Task<AuthResult> SignupAsync(User user);
+        public Task<(EnityCoreResult, AuthResult)> SigninAsync(User user);
+        public Task<(EnityCoreResult, AuthResult)> SignupAsync(User user);
         public Task<AuthResult> GenerateToken(User user);
         public Task<AuthResult> VerifyAndGenerateToken(string token, string refreshToken);
         public string HashPassword(string password);

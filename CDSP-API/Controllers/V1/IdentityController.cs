@@ -8,6 +8,8 @@ using CDSP_API.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Threading.Tasks;
 
 namespace CDSP_API.Controllers.V1
@@ -16,40 +18,52 @@ namespace CDSP_API.Controllers.V1
     [ApiController]
     public class IdentityController : ControllerBase
     {
-        private readonly IIdentityService IdentityService;
-        public IdentityController(IIdentityService identityService)
+        private readonly IIdentityService _identityService;
+        private readonly ILogger<IdentityController> _logger;
+        public IdentityController(IIdentityService identityService, ILogger<IdentityController> logger)
         {
-            IdentityService = identityService;
+            _logger = logger;
+            _identityService = identityService;
+
         }
 
         [HttpPost("Signin")]
-        public async Task<IActionResult> Signin([FromBody]SigninRequest signinRequest)
+        public async Task<IActionResult> Signin([FromBody] SigninRequest signinRequest)
         {
             User user = signinRequest.MapToModel();
 
-            AuthResult authResult = await IdentityService.SigninAsync(user);
-            if(authResult == null) return NotFound(ApiConstant.Identity.NonExistentIdentity);
+            (EnityCoreResult ecr, AuthResult authResult) = await _identityService.SigninAsync(user);
+            if (authResult == null)
+            { 
+                _logger.LogError(ecr.ToString(signinRequest.ToString()));
+                return NotFound(ApiConstant.Identity.NonExistentIdentity); 
+            }
 
             return Ok(authResult);
         }
 
         [HttpPost("Signup")]
-        public async Task<IActionResult> Signup([FromBody]SignupRequest signupRequest)
+        public async Task<IActionResult> Signup([FromBody] SignupRequest signupRequest)
         {
             User user = signupRequest.MapToModel();
 
-            AuthResult authResult = await IdentityService.SignupAsync(user);
-            if(authResult == null) return BadRequest(ApiConstant.Identity.SignupFailed);
+            (EnityCoreResult ecr, AuthResult authResult) = await _identityService.SignupAsync(user);
+
+            if (!ecr.IsSuccess)
+            {
+                _logger.LogError(ecr.ToString(signupRequest.ToString()));
+                return BadRequest(ApiConstant.Identity.SignupFailed);
+            }
 
             return Ok(authResult);
         }
 
         [HttpPost("Refresh")]
-        public async Task<IActionResult> Refresh([FromBody]TokenRefreshRequest tokenRefreshRequest)
+        public async Task<IActionResult> Refresh([FromBody] TokenRefreshRequest tokenRefreshRequest)
         {
-            AuthResult authResult = await IdentityService.VerifyAndGenerateToken(tokenRefreshRequest.Token, tokenRefreshRequest.RefreshToken);
+            AuthResult authResult = await _identityService.VerifyAndGenerateToken(tokenRefreshRequest.Token, tokenRefreshRequest.RefreshToken);
             if (authResult is null) return BadRequest(ApiConstant.GenericError);
-            
+
             return Ok(authResult);
         }
     }

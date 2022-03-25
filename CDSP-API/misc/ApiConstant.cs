@@ -27,7 +27,7 @@
 
         public static class SubThread
         {
-            public static string SubThreadNameAreadyInUse = "Sorry, Username is already in use.";
+            public static string SubThreadNameAreadyInUse = "Sorry, Subthread name is already in use.";
             public static readonly string NonExistentSubThread = "Sorry, No subthread in that name exists.";
 
             public static readonly string SuccefullyCreatedUser = "User was successfully created.";

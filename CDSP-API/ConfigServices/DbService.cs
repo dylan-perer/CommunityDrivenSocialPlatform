@@ -4,6 +4,7 @@ using CDSP_API.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace CDSP_API.ServiceConfig
 {
@@ -19,6 +20,7 @@ namespace CDSP_API.ServiceConfig
             services.AddScoped<IIdentityService, IdentityService>();
             services.AddScoped<IUsersService, UsersService>();
             services.AddScoped<ISubThreadsService, SubThreadsService>();
+
         }
     }
 }

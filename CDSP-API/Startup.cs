@@ -19,6 +19,7 @@ namespace CDSP_API
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddLogging();
             ServiceConfigExtension.ConfigureAll(services, Configuration);
         }
 
@@ -42,7 +43,6 @@ namespace CDSP_API
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
             });
-
 
             app.UseHttpsRedirection();
 

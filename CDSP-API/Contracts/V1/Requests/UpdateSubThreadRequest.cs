@@ -15,5 +15,10 @@ namespace CDSP_API.Contracts.V1.Requests
                 subThread.WelcomeMessage = WelcomeMessage;
             return subThread;
         }
+
+        public override string ToString()
+        {
+            return $"Description: {Description}, WelcomeMessage: {WelcomeMessage}";
+        }
     }
 }

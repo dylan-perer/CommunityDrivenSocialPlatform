@@ -19,6 +19,7 @@ namespace CDSP_API.Data
             : base(options)
         {
         }
+
         public virtual DbSet<Comment> Comment { get; set; }
         public virtual DbSet<ErrorLog> ErrorLog { get; set; }
         public virtual DbSet<Post> Post { get; set; }
@@ -58,8 +59,6 @@ namespace CDSP_API.Data
 
             modelBuilder.Entity<ErrorLog>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.Property(e => e.Body).IsUnicode(false);
 
                 entity.Property(e => e.HttpAction).IsUnicode(false);
@@ -103,7 +102,7 @@ namespace CDSP_API.Data
             modelBuilder.Entity<SubThread>(entity =>
             {
                 entity.HasIndex(e => e.Name)
-                    .HasName("UQ__sub_thre__72E12F1B3A41791B")
+                    .HasName("UQ__sub_thre__72E12F1BD01F7874")
                     .IsUnique();
 
                 entity.Property(e => e.Name).IsUnicode(false);
@@ -118,7 +117,7 @@ namespace CDSP_API.Data
             modelBuilder.Entity<SubThreadRole>(entity =>
             {
                 entity.HasIndex(e => e.SubThreadRoleName)
-                    .HasName("UQ__sub_thre__AC26C1506751022F")
+                    .HasName("UQ__sub_thre__AC26C150CB876615")
                     .IsUnique();
 
                 entity.Property(e => e.SubThreadRoleName)
@@ -129,7 +128,7 @@ namespace CDSP_API.Data
             modelBuilder.Entity<SubThreadUser>(entity =>
             {
                 entity.HasKey(e => new { e.SubThreadId, e.UserId })
-                    .HasName("PK__sub_thre__24F7E31E88E5D0D3");
+                    .HasName("PK__sub_thre__24F7E31E97C3B9F3");
 
                 entity.HasOne(d => d.SubThread)
                     .WithMany(p => p.SubThreadUser)
@@ -152,11 +151,11 @@ namespace CDSP_API.Data
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasIndex(e => e.EmailAddress)
-                    .HasName("UQ__user__20C6DFF56FBC9321")
+                    .HasName("UQ__user__20C6DFF546B8E186")
                     .IsUnique();
 
                 entity.HasIndex(e => e.Username)
-                    .HasName("UQ__user__F3DBC5722F2902D7")
+                    .HasName("UQ__user__F3DBC57241B274CB")
                     .IsUnique();
 
                 entity.Property(e => e.EmailAddress).IsUnicode(false);
@@ -195,7 +194,7 @@ namespace CDSP_API.Data
             modelBuilder.Entity<VoteType>(entity =>
             {
                 entity.HasIndex(e => e.VoteTypeName)
-                    .HasName("UQ__vote_typ__75D83FD842A52A33")
+                    .HasName("UQ__vote_typ__75D83FD8C8BC5A2E")
                     .IsUnique();
 
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
@@ -207,6 +206,5 @@ namespace CDSP_API.Data
         }
 
         partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
-    
-}
+    }
 }

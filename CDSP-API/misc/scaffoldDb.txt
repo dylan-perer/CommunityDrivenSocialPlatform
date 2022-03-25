@@ -1,1 +1,1 @@
-﻿Scaffold-DbContext "Data Source=.;Initial Catalog=CommunityDrivenSocialPlatform;User ID=dylan;Password=sa" Microsoft.EntityFrameWorkCore.SqlServer -outputdir Models -context DbContext -contextdir Data -DataAnnotations -Force
+﻿Scaffold-DbContext "Data Source=.;Initial Catalog=CommunityDrivenSocialPlatform;User ID=dylan;Password=sa" Microsoft.EntityFrameWorkCore.SqlServer -outputdir Models -context DataContext -contextdir Data -DataAnnotations -Force

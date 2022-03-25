@@ -1,1 +1,0 @@
-﻿Scaffold-DbContext "Data Source=.;Initial Catalog=CommunityDrivenSocialPlatform;User ID=dylan;Password=sa" Microsoft.EntityFrameWorkCore.SqlServer -outputdir Model -context CDSPdB -contextdir Data -DataAnnotations -Force

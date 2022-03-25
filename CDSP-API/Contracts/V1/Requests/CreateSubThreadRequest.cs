@@ -29,5 +29,9 @@ namespace CDSP_API.Contracts.V1.Requests
             };
         }
 
+        public override string ToString()
+        {
+            return $"Name: {Name}, Description: {Description}, WelcomeMessage: {WelcomeMessage}, CreatedAt: {CreatedAt}";
+        }
     }
 }

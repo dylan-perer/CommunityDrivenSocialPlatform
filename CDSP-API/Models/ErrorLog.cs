@@ -12,6 +12,9 @@ namespace CDSP_API.Models
     [Table("error_log")]
     public partial class ErrorLog
     {
+        [Key]
+        [Column("id")]
+        public int Id { get; set; }
         [Column("logged_user_id")]
         public int? LoggedUserId { get; set; }
         [Required]

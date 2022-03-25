@@ -2,6 +2,7 @@
 using CDSP_API.Model;
 using CDSP_API.Models;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -16,74 +17,160 @@ namespace CDSP_API.Services
             _dataContext = dataContext;
         }
 
-        public async Task<bool> CreateAsync(SubThread subThread, User user)
+        public async Task<EnityCoreResult> CreateAsync(SubThread subThread, User user)
         {
-            subThread.CreatorId = user.Id;
-            await _dataContext.SubThread.AddAsync(subThread);
-            var rowsAffected = await _dataContext.SaveChangesAsync();
+            EnityCoreResult ecr = new EnityCoreResult();
+            try
+            {
+                subThread.CreatorId = user.Id;
+                await _dataContext.SubThread.AddAsync(subThread);
+                await _dataContext.SaveChangesAsync();
 
-            await Join(subThread, user, SubThreadRoleEnum.MODERATOR);
-            return rowsAffected > 0;
+                await Join(subThread, user, SubThreadRoleEnum.MODERATOR);
+            }catch(Exception ex)
+            {
+                ecr.MapException(ex);
+            }
+            ecr.IsSuccess = ecr.ErrorMsg != null ? false : true;
+            return ecr;
         }
 
-        public async Task<bool> DeleteAsync(SubThread subThread)
+        public async Task<EnityCoreResult> DeleteAsync(SubThread subThread)
         {
+            EnityCoreResult ecr = new EnityCoreResult();
+
+            try
+            {
+                await GetByNameAsync(subThread.Name);
+                _dataContext.SubThread.Remove(subThread);
+                await _dataContext.SaveChangesAsync();
+            }
+            catch(Exception ex)
+            {
+                ecr.MapException(ex);
+            }
+            
             await GetByNameAsync(subThread.Name);
 
-            _dataContext.SubThread.Remove(subThread);
-            var rowsAffected = await _dataContext.SaveChangesAsync();
-
-            return rowsAffected > 0;
+            ecr.IsSuccess = ecr.ErrorMsg != null ? false : true;
+            return ecr;
         }
 
-        public async Task<List<SubThread>> GetAllAsync()
+        public async Task<(EnityCoreResult,List<SubThread>)> GetAllAsync()
         {
-            return await _dataContext.SubThread.ToListAsync();
-        }
-
-        public async Task<SubThread> GetByNameAsync(string name)
-        {
-            return await _dataContext.SubThread.SingleOrDefaultAsync(r => r.Name == name);
-        }
-
-        public async Task<bool> UpdateAsync(SubThread subThread)
-        {
-            _dataContext.SubThread.Update(subThread);
-            int rowsEffected = await _dataContext.SaveChangesAsync();
-
-            return (rowsEffected > 0);
-        }
-
-        public async Task<bool> Join(SubThread subThread, User user, SubThreadRoleEnum subThreadRoleEnum)
-        {
-            SubThreadUser subThreadUser = new SubThreadUser
+            EnityCoreResult ecr = new EnityCoreResult();
+            List<SubThread> subThreads =null;
+            try
             {
-                SubThreadId = subThread.Id,
-                UserId = user.Id,
-                SubThreadRoleId = (int)subThreadRoleEnum,
-            };
+                subThreads = await _dataContext.SubThread.ToListAsync();
+            }
+            catch(Exception ex)
+            {
+                ecr.MapException(ex);
+            }
 
-            await _dataContext.SubThreadUser.AddAsync(subThreadUser);
-            int rowsAffected = await _dataContext.SaveChangesAsync();
-
-            return rowsAffected > 0;
+            ecr.IsSuccess = ecr.ErrorMsg != null ? false : true;
+            return (ecr, subThreads) ;
         }
 
-        public async Task<bool> Leave(SubThread subThread, User user)
+        public async Task<(EnityCoreResult, SubThread)> GetByNameAsync(string name)
         {
-            SubThreadUser subThreadUser = await _dataContext.SubThreadUser.SingleOrDefaultAsync(r=> r.SubThreadRoleId==subThread.Id && r.UserId==user.Id);
+            EnityCoreResult ecr = new EnityCoreResult();
+            SubThread subThread = null;
+            try
+            {
+                subThread =  await _dataContext.SubThread.SingleOrDefaultAsync(r => r.Name == name);
+            }
+            catch(Exception ex)
+            {
+                ecr.MapException(ex);
+            }
+            ecr.IsSuccess = ecr.ErrorMsg!=null? false: true;
+            return (ecr, subThread);
+        }
+
+        public async Task<EnityCoreResult> UpdateAsync(SubThread subThread)
+        {
+            EnityCoreResult ecr = new EnityCoreResult();
+
+            try
+            {
+                _dataContext.SubThread.Update(subThread);
+                await _dataContext.SaveChangesAsync();
+            }
+            catch(Exception ex)
+            {
+                ecr.MapException(ex);
+            }
+
+            ecr.IsSuccess = ecr.ErrorMsg == null? false: true;
+            return ecr;
+        }
+
+        public async Task<EnityCoreResult> Join(SubThread subThread, User user, SubThreadRoleEnum subThreadRoleEnum)
+        {
+            EnityCoreResult ecr = new EnityCoreResult();
+            SubThreadUser subThreadUser; 
+
+            try
+            {
+                subThreadUser = new SubThreadUser
+                {
+                    SubThreadId = subThread.Id,
+                    UserId = user.Id,
+                    SubThreadRoleId = (int)subThreadRoleEnum,
+                };
+
+                await _dataContext.SubThreadUser.AddAsync(subThreadUser);
+                await _dataContext.SaveChangesAsync();
+            }
+            catch(Exception ex)
+            {
+                ecr.MapException(ex);
+            }
+
+            ecr.IsSuccess = ecr.ErrorMsg == null ? false : true;
+            return ecr;
+        }
+
+        public async Task<EnityCoreResult> Leave(SubThread subThread, User user)
+        {
+            EnityCoreResult ecr = new EnityCoreResult();
+            SubThreadUser subThreadUser;
+
+            try
+            {
+                subThreadUser = await _dataContext.SubThreadUser.SingleOrDefaultAsync(r => r.SubThreadRoleId == subThread.Id && r.UserId == user.Id);
+                _dataContext.SubThreadUser.Remove(subThreadUser);
+                int rowsAffected = await _dataContext.SaveChangesAsync();
+            }
+            catch(Exception ex)
+            {
+                ecr.MapException(ex);
+            }
+
+            ecr.IsSuccess = ecr.ErrorMsg == null ? false : true;
+            return ecr;
+        }
+
+        public async Task<EnityCoreResult> IsUserMember(SubThread subThread, User user)
+        {
+            EnityCoreResult ecr = new EnityCoreResult();
+            SubThreadUser subThreadUser;
+
+            try
+            {
+                subThreadUser = await _dataContext.SubThreadUser.SingleOrDefaultAsync(r => r.UserId == user.Id && r.SubThreadId == subThread.Id);
+            }
+            catch(Exception ex)
+            {
+                ecr.MapException(ex);
+            }
             
-            _dataContext.SubThreadUser.Remove(subThreadUser);
-            int rowsAffected = await _dataContext.SaveChangesAsync();
-
-            return rowsAffected > 0;
+            ecr.IsSuccess = ecr.ErrorMsg == null ? false : true;
+            return ecr;
         }
 
-        public async Task<bool> IsUserMember(SubThread subThread, User user)
-        {
-            SubThreadUser subThreadUser = await _dataContext.SubThreadUser.SingleOrDefaultAsync(r=>r.UserId==user.Id && r.SubThreadId==subThread.Id);
-            return subThreadUser is null? false: true;
-        }
 
     }
 }

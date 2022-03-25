@@ -16,46 +16,46 @@ namespace CDSP_API.Services
 {
     public class IdentityService : IIdentityService
     {
-        private readonly DataContext DataContext;
-        private readonly IConfiguration Configuration;
-        private readonly IUsersService UsersService;
+        private readonly DataContext _dataContext;
+        private readonly IConfiguration _configuration;
+        private readonly IUsersService _usersService;
         private readonly TokenValidationParameters TokenValidationParameters;
         public IdentityService(DataContext dataContext, IUsersService usersService, IConfiguration configuration, TokenValidationParameters tokenValidationParameters)
         {
-            DataContext = dataContext;
-            Configuration = configuration;
-            UsersService = usersService;
+            _dataContext = dataContext;
+            _configuration = configuration;
+            _usersService = usersService;
             TokenValidationParameters = tokenValidationParameters;
         }
-        public async Task<AuthResult> SigninAsync(User user)
+        public async Task<(EnityCoreResult,AuthResult)> SigninAsync(User user)
         {
-            User findUser = await DataContext.User.SingleOrDefaultAsync(r => r.Username == user.Username);
+            (EnityCoreResult ecr, User findUser) = await _usersService.GetByUsernameAsync(user.Username);  
 
-            if (findUser != null && VerifyPassword(user.Password, findUser.Password))
-                return await GenerateToken(findUser);
-            return null;
+            if (ecr.IsSuccess && VerifyPassword(user.Password, findUser.Password))
+                return (ecr, await GenerateToken(findUser));
+            return (ecr, null);
         }
 
-        public async Task<AuthResult> SignupAsync(User user)
+        public async Task<(EnityCoreResult,AuthResult)> SignupAsync(User user)
         {
             user.Password = HashPassword(user.Password);
-            bool isSuccess = await UsersService.CreateAsync(user);
+            (EnityCoreResult ecr, User createdUser) = await _usersService.CreateAsync(user);
 
-            if (isSuccess)
+            if (ecr.IsSuccess)
             {
-                return await GenerateToken(user);
+                return (ecr, await GenerateToken(createdUser));
             }
 
-            return null;
+            return (ecr, null);
         }
 
         public async Task<AuthResult> GenerateToken(User user)
         {
             var jwtTokenHandler = new JwtSecurityTokenHandler();
 
-            SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]));
+            SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
 
-            Role role = await DataContext.Role.SingleOrDefaultAsync(r => user.RoleId == r.Id);
+            Role role = await _dataContext.Role.SingleOrDefaultAsync(r => user.RoleId == r.Id);
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
@@ -83,8 +83,8 @@ namespace CDSP_API.Services
                 Token = RandomString(35) + Guid.NewGuid()
             };
 
-            await DataContext.RefreshToken.AddAsync(refreshToken);
-            await DataContext.SaveChangesAsync();
+            await _dataContext.RefreshToken.AddAsync(refreshToken);
+            await _dataContext.SaveChangesAsync();
 
             return new AuthResult
             {
@@ -150,7 +150,7 @@ namespace CDSP_API.Services
                 }
 
                 //validate if token exists in datasource
-                var storedToken = await DataContext.RefreshToken.FirstOrDefaultAsync(r=>r.Token.Equals(refreshToken));
+                var storedToken = await _dataContext.RefreshToken.FirstOrDefaultAsync(r=>r.Token.Equals(refreshToken));
                 if(storedToken is null)
                 {
                     return new AuthResult
@@ -182,11 +182,11 @@ namespace CDSP_API.Services
 
                 //update current token
                 storedToken.IsUsed = true;
-                DataContext.RefreshToken.Update(storedToken);
-                await DataContext.SaveChangesAsync();
+                _dataContext.RefreshToken.Update(storedToken);
+                await _dataContext.SaveChangesAsync();
 
                 //create new token
-                User loggedUser = await DataContext.User.SingleOrDefaultAsync(r=> r.Id == storedToken.UserId);
+                User loggedUser = await _dataContext.User.SingleOrDefaultAsync(r=> r.Id == storedToken.UserId);
                 if (loggedUser is null)
                 {
                     return new AuthResult
@@ -211,5 +211,7 @@ namespace CDSP_API.Services
             dateTime = dateTime.AddSeconds(unixTimeStamp).ToLocalTime();
             return dateTime;
         }
+
+
     }
 }

@@ -1,6 +1,8 @@
 ﻿using CDSP_API.Data;
 using CDSP_API.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -10,53 +12,113 @@ namespace CDSP_API.Services
 {
     public class UsersService : IUsersService
     {
-        private readonly DataContext DataContext;
+        private readonly DataContext _dataContext;
 
         public UsersService(DataContext dataContext)
         {
-            DataContext = dataContext;
+            _dataContext = dataContext;
         }
 
-        public async Task<bool> CreateAsync(User user)
+        public async Task<(EnityCoreResult, User)> CreateAsync(User user)
         {
-            await DataContext.User.AddAsync(user);
-            var rowsAffected =  await DataContext.SaveChangesAsync();
-
-            return rowsAffected > 0;
+            EnityCoreResult ecr = new EnityCoreResult();
+            try
+            {
+                await _dataContext.User.AddAsync(user);
+                await _dataContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                ecr.MapException(ex);
+            }
+            
+            ecr.IsSuccess = ecr.ErrorMsg != null ? false : true;
+            return (ecr, user);
         }
 
-        public async Task<bool> DeleteAsync(User user)
+        public async Task<EnityCoreResult> DeleteAsync(User user)
         {
-            await GetByUsernameAsync(user.Username);
+            EnityCoreResult ecr = new EnityCoreResult();
+            try
+            {
+                await GetByUsernameAsync(user.Username);
 
-            DataContext.User.Remove(user);
-            var rowsAffected = await DataContext.SaveChangesAsync();
+                _dataContext.User.Remove(user);
+                 await _dataContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                ecr.MapException(ex);
+            }
 
-            return rowsAffected > 0;
+            ecr.IsSuccess = ecr.ErrorMsg != null ? false : true;
+            return ecr;
         }
 
-        public async Task<List<User>> GetAllAsync()
+        public async Task<(EnityCoreResult, List<User>)> GetAllAsync()
         {
-            return await DataContext.User.ToListAsync();
+            EnityCoreResult ecr = new EnityCoreResult();
+            List<User> users = null;
+            try
+            {
+                users = await _dataContext.User.ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                ecr.MapException(ex);
+            }
+            ecr.IsSuccess = ecr.ErrorMsg != null ? false : true;
+            return (ecr, users);
         }
 
-        public async Task<User> GetByUsernameAsync(string username)
+        public async Task<(EnityCoreResult, User)> GetByUsernameAsync(string username)
         {
-            return await DataContext.User.SingleOrDefaultAsync(r => r.Username == username);
+            EnityCoreResult ecr = new EnityCoreResult();
+            User user = null;
+            try
+            {
+                user = await _dataContext.User.SingleOrDefaultAsync(r => r.Username == username);
+            }
+            catch (Exception ex)
+            {
+                ecr.MapException(ex);
+            }
+            ecr.IsSuccess = ecr.ErrorMsg!=null? false: true;
+            return (ecr, user);
         }
 
-        public async Task<User> GetLoggedUser(ClaimsPrincipal claimsPrincipal)
+        public async Task<(EnityCoreResult, User)> GetLoggedUser(ClaimsPrincipal claimsPrincipal)
         {
-            string loggedUser = claimsPrincipal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-            return await DataContext.User.FirstOrDefaultAsync(r => r.Username == loggedUser);
+            EnityCoreResult ecr = new EnityCoreResult();
+            User user = null;
+            try
+            {
+                string loggedUser = claimsPrincipal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                user = await _dataContext.User.FirstOrDefaultAsync(r => r.Username == loggedUser);
+            }
+            catch (Exception ex)
+            {
+                ecr.MapException(ex);
+            }
+            ecr.IsSuccess = ecr.ErrorMsg != null ? false : true;
+            return (ecr, user);
         }
 
-        public async Task<bool>UpdateAsync(User user)
+        public async Task<EnityCoreResult> UpdateAsync(User user)
         {
-            DataContext.User.Update(user);
-            int rowsEffected = await DataContext.SaveChangesAsync();
+            EnityCoreResult ecr = new EnityCoreResult();
+            try
+            {
+                _dataContext.User.Update(user);
+                  await _dataContext.SaveChangesAsync();
+            }
+            catch(Exception ex)
+            {
+                ecr.MapException(ex);
+            }
 
-            return (rowsEffected > 0);
+            ecr.IsSuccess = ecr.ErrorMsg != null ? false : true;
+            return ecr;
         }
     }
 }

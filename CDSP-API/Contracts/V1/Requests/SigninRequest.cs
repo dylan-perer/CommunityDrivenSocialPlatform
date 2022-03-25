@@ -21,5 +21,10 @@ namespace CDSP_API.Contracts.V1.Requests
                 Password = Password,
             };
         }
+
+        public override string ToString()
+        {
+            return $"Username: {Username}, Password: {Password}";
+        }
     }
 }
