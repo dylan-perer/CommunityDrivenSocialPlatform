@@ -1,4 +1,5 @@
-﻿using CDSP_API.Contracts.V1.Requests;
+﻿using CDSP_API.Contracts;
+using CDSP_API.Contracts.V1.Requests;
 using CDSP_API.Contracts.V1.Responses;
 using CDSP_API.Data;
 using CDSP_API.misc;
@@ -13,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace CDSP_API.Controllers.V1
 {
-    [Route("api/v1/[controller]")]
+    [Route(ApiRoutes.BaseAndVersionV1 + ApiRoutes.Controller.SubThreadController)]
     [ApiController]
     public class SubthreadController : ControllerBase
     {
@@ -31,7 +32,7 @@ namespace CDSP_API.Controllers.V1
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            (EnityCoreResult ecr,List<SubThread> subThreads) = await _subthreadsService.GetAllAsync();
+            (EnityCoreResult ecr, List<SubThread> subThreads) = await _subthreadsService.GetAllAsync();
             if (!ecr.IsSuccess)
             {
                 _logger.LogError(ecr.ToString("GetAllSubthreads"));
@@ -63,7 +64,7 @@ namespace CDSP_API.Controllers.V1
             return Ok(new SubThreadDetailsResponse().MapToReponse(subThread));
         }
 
-        [HttpGet("{name}")]
+        [HttpGet(ApiRoutes.Controller.RouteVariable.SubThreadName)]
         public async Task<IActionResult> GetByName([FromRoute] string name)
         {
             (EnityCoreResult ecr, SubThread subThread) = await _subthreadsService.GetByNameAsync(name);
@@ -76,7 +77,7 @@ namespace CDSP_API.Controllers.V1
         }
 
         [Authorize]
-        [HttpPut("{name}")]//<--auth
+        [HttpPut(ApiRoutes.Controller.RouteVariable.SubThreadName)]
         public async Task<IActionResult> Update([FromRoute] string name, [FromBody] UpdateSubThreadRequest updateUserDetailsRequest)
         {
             (EnityCoreResult ecr, SubThread subThread) = await _subthreadsService.GetByNameAsync(name);
@@ -98,7 +99,7 @@ namespace CDSP_API.Controllers.V1
         }
 
         [Authorize]//<---
-        [HttpDelete("{name}")]
+        [HttpDelete(ApiRoutes.Controller.RouteVariable.SubThreadName)]
         public async Task<IActionResult> Delete([FromRoute] string name)
         {
             (EnityCoreResult ecr, SubThread subThread) = await _subthreadsService.GetByNameAsync(name);
@@ -114,18 +115,17 @@ namespace CDSP_API.Controllers.V1
         }
 
         [Authorize]
-        [HttpGet("{name}/join")]
+        [HttpGet(ApiRoutes.Controller.RouteVariable.SubThreadJoin)]
         public async Task<IActionResult> Join([FromRoute] string name)
         {
-            (EnityCoreResult ecr,User loggedUser) = await _usersService.GetLoggedUser(User);
+            (EnityCoreResult ecr, User loggedUser) = await _usersService.GetLoggedUser(User);
 
             (SubThread subThread, IActionResult action) = await IsValidSubThread(name);
             if (subThread is null) return action;
 
-            EnityCoreResult isMemberEcr = await _subthreadsService.IsUserMember(subThread, loggedUser);
-            if (!isMemberEcr.IsSuccess)
+            (EnityCoreResult isMemberEcr, SubThreadUser subThreadUser) = await _subthreadsService.IsUserMember(subThread, loggedUser);
+            if (isMemberEcr.IsSuccess && subThreadUser != null)
             {
-                _logger.LogError(isMemberEcr.ToString(name));
                 return NotFound(ApiConstant.SubThread.AlreadyAnMember);
             }
             EnityCoreResult joinEcr = await _subthreadsService.Join(subThread, loggedUser, SubThreadRoleEnum.USER);
@@ -138,22 +138,21 @@ namespace CDSP_API.Controllers.V1
         }
 
         [Authorize]
-        [HttpGet("{name}/leave")]
+        [HttpGet(ApiRoutes.Controller.RouteVariable.SubThreadLeave)]
         public async Task<IActionResult> Leave([FromRoute] string name)
         {
-            (EnityCoreResult ecr,User loggedUser) = await _usersService.GetLoggedUser(User);
+            (EnityCoreResult ecr, User loggedUser) = await _usersService.GetLoggedUser(User);
 
             (SubThread subThread, IActionResult action) = await IsValidSubThread(name);
             if (subThread is null) return action;
 
-            EnityCoreResult isMemberEcr = await _subthreadsService.IsUserMember(subThread, loggedUser);
-            if (!isMemberEcr.IsSuccess)
+            (EnityCoreResult isMemberEcr, SubThreadUser subThreadUser) = await _subthreadsService.IsUserMember(subThread, loggedUser);
+            if (isMemberEcr.IsSuccess && subThreadUser == null)
             {
-                _logger.LogError(isMemberEcr.ToString(name));
                 return NotFound(ApiConstant.SubThread.NotAnMember);
             }
 
-            EnityCoreResult leaveEcr = await _subthreadsService.Leave(subThread, loggedUser);
+            EnityCoreResult leaveEcr = await _subthreadsService.Leave(subThreadUser, loggedUser);
             if (!leaveEcr.IsSuccess)
             {
                 _logger.LogError(leaveEcr.ToString(name));
@@ -161,6 +160,24 @@ namespace CDSP_API.Controllers.V1
             }
 
             return Ok(ApiConstant.SubThread.LeftSuccess);
+        }
+
+        [HttpGet(ApiRoutes.Controller.RouteVariable.SubThreadUsers)]
+        public async Task<IActionResult> GetUsers([FromRoute] string name)
+        {
+            (var ecr, var users) = await _subthreadsService.SubThreadUsersAsync(name);
+            if (!ecr.IsSuccess)
+            {
+                _logger.LogError(ecr.ToString(name));
+                return BadRequest(ApiConstant.GenericError);
+            }
+
+            List<UserDetailsResponse> userDetailsResponses = new List<UserDetailsResponse>();
+            foreach (var user in users)
+            {
+                userDetailsResponses.Add(new UserDetailsResponse().MapToReponse(user));
+            }
+            return Ok(userDetailsResponses);
         }
 
         private async Task<(SubThread, IActionResult)> IsValidSubThread(string name)

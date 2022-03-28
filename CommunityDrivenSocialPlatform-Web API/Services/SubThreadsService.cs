@@ -4,6 +4,7 @@ using CDSP_API.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace CDSP_API.Services
@@ -27,11 +28,12 @@ namespace CDSP_API.Services
                 await _dataContext.SaveChangesAsync();
 
                 await Join(subThread, user, SubThreadRoleEnum.MODERATOR);
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 ecr.MapException(ex);
             }
-            ecr.IsSuccess = ecr.ErrorMsg != null ? false : true;
+            ecr.IsSuccess = ecr.ErrorMsg == null ? true : false;
             return ecr;
         }
 
@@ -45,32 +47,32 @@ namespace CDSP_API.Services
                 _dataContext.SubThread.Remove(subThread);
                 await _dataContext.SaveChangesAsync();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ecr.MapException(ex);
             }
-            
+
             await GetByNameAsync(subThread.Name);
 
-            ecr.IsSuccess = ecr.ErrorMsg != null ? false : true;
+            ecr.IsSuccess = ecr.ErrorMsg == null ? true : false;
             return ecr;
         }
 
-        public async Task<(EnityCoreResult,List<SubThread>)> GetAllAsync()
+        public async Task<(EnityCoreResult, List<SubThread>)> GetAllAsync()
         {
             EnityCoreResult ecr = new EnityCoreResult();
-            List<SubThread> subThreads =null;
+            List<SubThread> subThreads = null;
             try
             {
                 subThreads = await _dataContext.SubThread.ToListAsync();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ecr.MapException(ex);
             }
 
-            ecr.IsSuccess = ecr.ErrorMsg != null ? false : true;
-            return (ecr, subThreads) ;
+            ecr.IsSuccess = ecr.ErrorMsg == null ? true : false;
+            return (ecr, subThreads);
         }
 
         public async Task<(EnityCoreResult, SubThread)> GetByNameAsync(string name)
@@ -79,13 +81,13 @@ namespace CDSP_API.Services
             SubThread subThread = null;
             try
             {
-                subThread =  await _dataContext.SubThread.SingleOrDefaultAsync(r => r.Name == name);
+                subThread = await _dataContext.SubThread.SingleOrDefaultAsync(r => r.Name == name);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ecr.MapException(ex);
             }
-            ecr.IsSuccess = ecr.ErrorMsg!=null? false: true;
+            ecr.IsSuccess = ecr.ErrorMsg == null ? true : false;
             return (ecr, subThread);
         }
 
@@ -98,20 +100,20 @@ namespace CDSP_API.Services
                 _dataContext.SubThread.Update(subThread);
                 await _dataContext.SaveChangesAsync();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ecr.MapException(ex);
             }
 
-            ecr.IsSuccess = ecr.ErrorMsg == null? false: true;
+            ecr.IsSuccess = ecr.ErrorMsg == null ? true : false;
             return ecr;
         }
 
         public async Task<EnityCoreResult> Join(SubThread subThread, User user, SubThreadRoleEnum subThreadRoleEnum)
         {
             EnityCoreResult ecr = new EnityCoreResult();
-            SubThreadUser subThreadUser; 
-
+            SubThreadUser subThreadUser;
+            int rowsAffected = 0;
             try
             {
                 subThreadUser = new SubThreadUser
@@ -122,55 +124,83 @@ namespace CDSP_API.Services
                 };
 
                 await _dataContext.SubThreadUser.AddAsync(subThreadUser);
-                await _dataContext.SaveChangesAsync();
+                rowsAffected = await _dataContext.SaveChangesAsync();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ecr.MapException(ex);
             }
 
-            ecr.IsSuccess = ecr.ErrorMsg == null ? false : true;
+            ecr.IsSuccess = rowsAffected > 0;
             return ecr;
         }
 
-        public async Task<EnityCoreResult> Leave(SubThread subThread, User user)
+        public async Task<EnityCoreResult> Leave(SubThreadUser subThreadUser, User user)
         {
             EnityCoreResult ecr = new EnityCoreResult();
-            SubThreadUser subThreadUser;
+            int rowsAffected = 0;
 
             try
             {
-                subThreadUser = await _dataContext.SubThreadUser.SingleOrDefaultAsync(r => r.SubThreadRoleId == subThread.Id && r.UserId == user.Id);
                 _dataContext.SubThreadUser.Remove(subThreadUser);
-                int rowsAffected = await _dataContext.SaveChangesAsync();
+                rowsAffected = await _dataContext.SaveChangesAsync();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ecr.MapException(ex);
             }
 
-            ecr.IsSuccess = ecr.ErrorMsg == null ? false : true;
+            ecr.IsSuccess = rowsAffected > 0;
             return ecr;
         }
 
-        public async Task<EnityCoreResult> IsUserMember(SubThread subThread, User user)
+        public async Task<(EnityCoreResult, SubThreadUser)> IsUserMember(SubThread subThread, User user)
         {
             EnityCoreResult ecr = new EnityCoreResult();
-            SubThreadUser subThreadUser;
+            SubThreadUser subThreadUser = null;
 
             try
             {
                 subThreadUser = await _dataContext.SubThreadUser.SingleOrDefaultAsync(r => r.UserId == user.Id && r.SubThreadId == subThread.Id);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 ecr.MapException(ex);
             }
-            
-            ecr.IsSuccess = ecr.ErrorMsg == null ? false : true;
-            return ecr;
+            ecr.IsSuccess = ecr.ErrorMsg == null ? true : false;
+            return (ecr, subThreadUser);
         }
 
+        public async Task<(EnityCoreResult, List<User>)> SubThreadUsersAsync(string name)
+        {
+            EnityCoreResult ecr = new EnityCoreResult();
+            List<User> users = new List<User>();
+            try
+            {
+                (var subthreadEcr, SubThread subThread) = await GetByNameAsync(name);
+                var subthreadUsers = await _dataContext.SubThreadUser.Where(r => r.SubThreadId == subThread.Id).ToListAsync();
 
+                var innerJoin = _dataContext.User.Join(_dataContext.SubThreadUser, tbl_user => tbl_user.Id, tbl_sub_thread_user => tbl_sub_thread_user.UserId,
+                (tbl_user, tbl_sub_thread_user) => new { tbl_user, tbl_sub_thread_user })
+                .Select(c => new { c.tbl_user.Username, c.tbl_sub_thread_user.SubThreadRoleId, c.tbl_sub_thread_user.SubThreadId, c.tbl_user.Description, c.tbl_user.Id, c.tbl_user.ProfilePictureUrl })
+                .Where(r => r.SubThreadId == subThread.Id);
+
+                foreach (var user in innerJoin)
+                {
+                    users.Add(new User {
+                        Id = user.Id,
+                        Username = user.Username,
+                        Description = user.Description,
+                        ProfilePictureUrl = user.ProfilePictureUrl,
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                ecr.MapException(ex);
+            }
+            ecr.IsSuccess = ecr.ErrorMsg == null ? true : false;
+            return (ecr, users);
+        }
     }
 }

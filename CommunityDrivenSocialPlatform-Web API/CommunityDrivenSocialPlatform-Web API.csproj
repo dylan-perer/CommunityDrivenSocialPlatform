@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <RootNamespace>CDSP_API</RootNamespace>
+    <RootNamespace>CommunityDrivenSocialPlatform-Web API</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

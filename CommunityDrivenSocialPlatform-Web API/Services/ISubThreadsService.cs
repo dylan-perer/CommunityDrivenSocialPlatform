@@ -14,7 +14,8 @@ namespace CDSP_API.Services
         public Task<EnityCoreResult> UpdateAsync(SubThread subThread);
         public Task<EnityCoreResult> DeleteAsync(SubThread subThread);
         public Task<EnityCoreResult> Join(SubThread subThread, User user, SubThreadRoleEnum subThreadRoleEnum);
-        public Task<EnityCoreResult> IsUserMember(SubThread subThread, User user);
-        public Task<EnityCoreResult> Leave(SubThread subThread, User user);
+        public Task<(EnityCoreResult, SubThreadUser)> IsUserMember(SubThread subThread, User user);
+        public Task<EnityCoreResult> Leave(SubThreadUser subThreadUser, User user);
+        public Task<(EnityCoreResult, List<User>)> SubThreadUsersAsync(string name);
     }
 }

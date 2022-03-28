@@ -1,20 +1,16 @@
-﻿using CDSP_API.Contracts.V1.Requests;
-using CDSP_API.Contracts.V1.Responses;
+﻿using CDSP_API.Contracts;
+using CDSP_API.Contracts.V1.Requests;
 using CDSP_API.Data;
 using CDSP_API.misc;
-using CDSP_API.Model;
 using CDSP_API.Models;
 using CDSP_API.Services;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Threading.Tasks;
 
 namespace CDSP_API.Controllers.V1
 {
-    [Route("api/v1/[controller]")]
+    [Route(ApiRoutes.BaseAndVersionV1 + ApiRoutes.Controller.IdentityController)]
     [ApiController]
     public class IdentityController : ControllerBase
     {
@@ -27,8 +23,8 @@ namespace CDSP_API.Controllers.V1
 
         }
 
-        [HttpPost("Signin")]
-        public async Task<IActionResult> Signin([FromBody] SigninRequest signinRequest)
+        [HttpPost(ApiRoutes.Controller.Action.Signin)]
+        public async Task<IActionResult> SigninAsync([FromBody] SigninRequest signinRequest)
         {
             User user = signinRequest.MapToModel();
 
@@ -42,8 +38,8 @@ namespace CDSP_API.Controllers.V1
             return Ok(authResult);
         }
 
-        [HttpPost("Signup")]
-        public async Task<IActionResult> Signup([FromBody] SignupRequest signupRequest)
+        [HttpPost(ApiRoutes.Controller.Action.Signup)]
+        public async Task<IActionResult> SignupAsync([FromBody] SignupRequest signupRequest)
         {
             User user = signupRequest.MapToModel();
 
@@ -58,8 +54,8 @@ namespace CDSP_API.Controllers.V1
             return Ok(authResult);
         }
 
-        [HttpPost("Refresh")]
-        public async Task<IActionResult> Refresh([FromBody] TokenRefreshRequest tokenRefreshRequest)
+        [HttpPost(ApiRoutes.Controller.Action.RefreshToken)]
+        public async Task<IActionResult> RefreshTokenAsync([FromBody] TokenRefreshRequest tokenRefreshRequest)
         {
             AuthResult authResult = await _identityService.VerifyAndGenerateToken(tokenRefreshRequest.Token, tokenRefreshRequest.RefreshToken);
             if (authResult is null) return BadRequest(ApiConstant.GenericError);

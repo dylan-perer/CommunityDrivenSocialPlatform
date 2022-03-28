@@ -83,7 +83,7 @@ namespace CDSP_API.Services
             {
                 ecr.MapException(ex);
             }
-            ecr.IsSuccess = ecr.ErrorMsg!=null? false: true;
+            ecr.IsSuccess = user==null? false: true;
             return (ecr, user);
         }
 

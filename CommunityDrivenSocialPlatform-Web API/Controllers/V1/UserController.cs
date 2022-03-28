@@ -1,4 +1,5 @@
-﻿using CDSP_API.Contracts.V1.Requests;
+﻿using CDSP_API.Contracts;
+using CDSP_API.Contracts.V1.Requests;
 using CDSP_API.Contracts.V1.Responses;
 using CDSP_API.Data;
 using CDSP_API.misc;
@@ -14,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace CDSP_API.Controllers
 {
-    [Route("api/v1/[controller]")]
+    [Route(ApiRoutes.BaseAndVersionV1 + ApiRoutes.Controller.UsersController)]
     [ApiController]
     public class UserController : ControllerBase
     {
@@ -39,7 +40,7 @@ namespace CDSP_API.Controllers
             return Ok(new UserDetailsResponse().MapToReponse(users));
         }
 
-        [HttpGet("{username}")]
+        [HttpGet(ApiRoutes.Controller.RouteVariable.Username)]
         public async Task<IActionResult> GetByUsername([FromRoute] string username)
         {
             (EnityCoreResult ecr, User user) = await _usersService.GetByUsernameAsync(username);
@@ -52,7 +53,7 @@ namespace CDSP_API.Controllers
             return Ok(new UserDetailsResponse().MapToReponse(user));
         }
 
-        [HttpPut("{username}")]
+        [HttpPut(ApiRoutes.Controller.RouteVariable.Username)]
         public async Task<IActionResult> Update([FromRoute] string username, [FromBody] UpdateUserDetailsRequest updateUserDetailsRequest)
         {
             (EnityCoreResult ecr, User user) = await _usersService.GetByUsernameAsync(username);
@@ -74,7 +75,7 @@ namespace CDSP_API.Controllers
             return Ok(new UserDetailsResponse().MapToReponse(user));
         }
 
-        [HttpDelete("{username}")]
+        [HttpDelete(ApiRoutes.Controller.RouteVariable.Username)]
         public async Task<IActionResult> Delete([FromRoute] string username)
         {
             (EnityCoreResult ecr, User user) = await _usersService.GetByUsernameAsync(username);

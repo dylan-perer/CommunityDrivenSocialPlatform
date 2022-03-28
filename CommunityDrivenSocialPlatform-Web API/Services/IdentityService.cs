@@ -49,11 +49,25 @@ namespace CDSP_API.Services
             return (ecr, null);
         }
 
+        private async Task InitalizeRoles()
+        {
+            var res = await _dataContext.Role.FirstOrDefaultAsync(r => r.Id == 1);
+            if(res == null)
+            {
+                await _dataContext.Role.AddAsync(new Role { RoleName ="USER" });
+                await _dataContext.Role.AddAsync(new Role { RoleName="ADMIN" });
+
+                await _dataContext.SaveChangesAsync();
+            }
+        }
+
         public async Task<AuthResult> GenerateToken(User user)
         {
             var jwtTokenHandler = new JwtSecurityTokenHandler();
 
             SymmetricSecurityKey securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
+
+            await InitalizeRoles();
 
             Role role = await _dataContext.Role.SingleOrDefaultAsync(r => user.RoleId == r.Id);
 
@@ -211,7 +225,6 @@ namespace CDSP_API.Services
             dateTime = dateTime.AddSeconds(unixTimeStamp).ToLocalTime();
             return dateTime;
         }
-
 
     }
 }

@@ -5,7 +5,7 @@ namespace CDSP_API.Data
 {
     public class EnityCoreResult
     {
-        public bool IsSuccess { get; set; }
+        public bool IsSuccess { get; set; } = true;
         public string ErrorMsg { get; set; }
         public string InnerException { get; set; }
         public string InnerExceptionStackTrace { get; set; }
@@ -17,7 +17,7 @@ namespace CDSP_API.Data
 
         public void MapException(Exception ex)
         {
-            InnerException = ex.InnerException.Message;
+            InnerException = ex.InnerException?.Message;
             ErrorMsg = ex.Message;
             InnerExceptionStackTrace = ex.StackTrace;
         }
