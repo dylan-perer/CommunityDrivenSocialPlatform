@@ -1,1 +1,1 @@
-CommunityDrivenSocialPlatform
+![alt text](https://github.com/dylan-perer/CommunityDrivenSocialPlatform/master/cdsp.png?raw=true)
