@@ -17,6 +17,8 @@
                 public const string Signup = "signup";
                 public const string Signin = "signin";
                 public const string RefreshToken = "refreshtoken";
+                public const string Vote = "vote";
+                public const string Comment = "comment";
             }
             public static class RouteVariable
             {

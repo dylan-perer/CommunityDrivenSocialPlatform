@@ -41,14 +41,17 @@ namespace CDSP_API.Services
             return (ecr, comment); 
         }
 
-        public async Task<EnityCoreResult> DeleteByIdAsync(int id)
+        public async Task<EnityCoreResult> DeleteByIdAsync(int id, User user)
         {
             EnityCoreResult ecr = new EnityCoreResult();
             try
             {
                 (var _ecr, var comment) = await GetByIdAsync(id);
-                _dataContext.Comment.Remove(comment);
-                await _dataContext.SaveChangesAsync();
+                if(comment.UserId == user.Id)
+                {
+                    _dataContext.Comment.Remove(comment);
+                    await _dataContext.SaveChangesAsync();
+                }
             }
             catch (Exception ex)
             {
@@ -90,15 +93,19 @@ namespace CDSP_API.Services
             return (ecr, comment);
         }
 
-        public async Task<(EnityCoreResult, Comment)> UpdateAsync(Comment comment)
+        public async Task<(EnityCoreResult, Comment)> UpdateAsync(Comment comment, User user)
         {
             EnityCoreResult ecr = new EnityCoreResult();
             try
             {
                 (var _ecr, var _comment) = await GetByIdAsync(comment.Id);
-                _comment.Body=comment.Body;
-                _dataContext.Comment.Update(_comment);
-                await _dataContext.SaveChangesAsync();
+                if (comment.UserId == user.Id)
+                {
+                    _comment.Body = comment.Body;
+                    _dataContext.Comment.Update(_comment);
+                    await _dataContext.SaveChangesAsync();
+                }
+
             }
             catch (Exception ex)
             {

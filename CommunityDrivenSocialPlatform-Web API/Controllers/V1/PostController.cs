@@ -2,6 +2,7 @@
 using CDSP_API.Contracts.V1.Requests;
 using CDSP_API.Contracts.V1.Responses;
 using CDSP_API.misc;
+using CDSP_API.Model;
 using CDSP_API.Models;
 using CDSP_API.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -20,11 +21,13 @@ namespace CDSP_API.Controllers.V1
         private readonly IUsersService _usersService;
         private readonly IPostService _postService;
         private readonly ILogger<IdentityController> _logger;
-        public PostController(IUsersService usersService, IPostService postService, ILogger<IdentityController> logger)
+        private readonly ICommentService _commentService;
+        public PostController(IUsersService usersService, IPostService postService, ICommentService commentService, ILogger<IdentityController> logger)
         {
             _logger = logger;
             _usersService = usersService;
             _postService = postService;
+            _commentService = commentService;
         }
 
         [HttpGet]
@@ -122,6 +125,68 @@ namespace CDSP_API.Controllers.V1
             return BadRequest(ApiConstant.GenericError);
         }
 
+        [Authorize]
+        [HttpGet(ApiRoutes.Controller.Action.Vote)]
+        public async Task<IActionResult> Vote([FromRoute] int id, [FromBody] VoteRequest voteRequest)
+        {
+            (var ecr, User loggedUser) = await _usersService.GetLoggedUser(User);
 
+            if(voteRequest.voteType == PostVoteEnum.UPVOTE)
+            {
+                await _postService.AddUpVoteAsync(id, loggedUser);
+            }
+            else if(voteRequest.voteType == PostVoteEnum.DOWNVOTE)
+            {
+                await _postService.AddDownVoteAsync(id, loggedUser);
+            }
+
+            _logger.LogError(ecr.ToString(id));
+            return BadRequest(ApiConstant.GenericError);
+        }
+
+        [Authorize]
+        [HttpPost(ApiRoutes.Controller.Action.Comment)]
+        public async Task<IActionResult> CreateComment([FromRoute] int id, [FromBody] CreateCommentRequest createCommentRequest)
+        {
+            (var ecr, User loggedUser) = await _usersService.GetLoggedUser(User);
+            (var _ecr, var comment) = await _commentService.CreateAsync(createCommentRequest.MapToModel(), loggedUser);
+
+            if (_ecr.IsSuccess)
+            {
+                return Ok(new CommentDetailsResponse().MapToReponse(comment));
+            }
+            _logger.LogError(ecr.ToString(id));
+            return BadRequest(ApiConstant.GenericError);
+        }
+
+        [Authorize]
+        [HttpPut(ApiRoutes.Controller.Action.Comment)]
+        public async Task<IActionResult> UpdateComment([FromRoute] int id, [FromBody] UpdateCommentRequest updateCommentRequest)
+        {
+            (var ecr, User loggedUser) = await _usersService.GetLoggedUser(User);
+            (var _ecr, var comment) = await _commentService.UpdateAsync(updateCommentRequest.MapToModel(), loggedUser);
+
+            if (_ecr.IsSuccess)
+            {
+                return Ok(new CommentDetailsResponse().MapToReponse(comment));
+            }
+            _logger.LogError(ecr.ToString(id));
+            return BadRequest(ApiConstant.GenericError);
+        }
+
+        [Authorize]
+        [HttpDelete(ApiRoutes.Controller.Action.Comment)]
+        public async Task<IActionResult> DeleteComment([FromRoute] int id)
+        {
+            (var ecr, User loggedUser) = await _usersService.GetLoggedUser(User);
+            var _ecr = await _commentService.DeleteByIdAsync(id, loggedUser);
+
+            if (_ecr.IsSuccess)
+            {
+                return Ok(ApiConstant.Post.Comment.Deleted);
+            }
+            _logger.LogError(ecr.ToString(id));
+            return BadRequest(ApiConstant.GenericError);
+        }
     }
 }
