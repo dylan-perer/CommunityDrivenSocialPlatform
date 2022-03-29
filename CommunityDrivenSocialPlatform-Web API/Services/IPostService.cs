@@ -9,11 +9,13 @@ namespace CDSP_API.Services
     public interface IPostService
     {
         public Task<(EnityCoreResult, Post)> GetByIdAsync(int id);
-        public Task<(EnityCoreResult, Post)> CreateAsync(Post post);
-        public Task<(EnityCoreResult, Post)> UpdateByIdAsync(int id);
-        public Task<EnityCoreResult> DeleteByIdAsync(int id);
+        public Task<(EnityCoreResult, List<Post>)> GetAllPostsOnSubThreadAsync(string subthreadName);
+        public Task<(EnityCoreResult, Post)> CreateAsync(Post post, User user, string subThreadName);
+        public Task<(EnityCoreResult, Post)> UpdateAsync(Post post, User user);
+        public Task<EnityCoreResult> DeleteByIdAsync(int id, User user);
         public Task<EnityCoreResult> AddUpVoteAsync(int id, User user);
         public Task<EnityCoreResult> AddDownVoteAsync(int id, User user);
-        public Task<(EnityCoreResult, int)> VotesAsync(int id);
+        public Task<(EnityCoreResult, int)> GetVoteCountAsync(int id);
+        public Task<(EnityCoreResult, List<Comment>)> GetAllCommentsAsync(int id);
     }
 }

@@ -18,11 +18,13 @@ namespace CDSP_API.Services
     public class PostService : IPostService
     {
         private readonly DataContext _dataContext;
-        private readonly IUsersService _usersService;
-        public PostService(DataContext dataContext, IUsersService usersService)
+        private readonly ICommentService _commentService;
+        private readonly ISubThreadsService _subThreadsService;
+        public PostService(DataContext dataContext, ISubThreadsService subThreadsService, ICommentService commentService)
         {
             _dataContext = dataContext;
-            _usersService = usersService;
+            _commentService = commentService;
+            _subThreadsService = subThreadsService;
 
         }
 
@@ -47,6 +49,8 @@ namespace CDSP_API.Services
 
         public async Task<EnityCoreResult> AddDownVoteAsync(int id, User user)
         {
+            await InitalizeVoteTypesAsync();
+
             EnityCoreResult ecr = new EnityCoreResult();
             try
             {
@@ -76,6 +80,8 @@ namespace CDSP_API.Services
 
         public async Task<EnityCoreResult> AddUpVoteAsync(int id, User user)
         {
+            await InitalizeVoteTypesAsync();
+
             EnityCoreResult ecr = new EnityCoreResult();
             try
             {
@@ -126,13 +132,17 @@ namespace CDSP_API.Services
             return (ecr, vote);
         }
 
-        public async Task<(EnityCoreResult, Post)> CreateAsync(Post post)
+        public async Task<(EnityCoreResult, Post)> CreateAsync(Post post, User user, string subThreadName)
         {
             EnityCoreResult ecr = new EnityCoreResult();
             try
             {
+                (var _ecr, var subThread) = await _subThreadsService.GetByNameAsync(subThreadName);
+                post.SubThreadId = subThread.Id;
+                post.AuthorId = user.Id;
                 await _dataContext.Post.AddAsync(post);
                 await _dataContext.SaveChangesAsync();
+                await AddUpVoteAsync(post.Id, user);
             }
             catch (Exception ex)
             {
@@ -143,12 +153,12 @@ namespace CDSP_API.Services
             return (ecr, post);
         }
 
-        public async Task<EnityCoreResult> DeleteByIdAsync(int id)
+        public async Task<EnityCoreResult> DeleteByIdAsync(int id, User user)
         {
             EnityCoreResult ecr = new EnityCoreResult();
             try
             {
-               (var _ecr, Post post) =  await GetByIdAsync(id);
+                Post post = await _dataContext.Post.FirstOrDefaultAsync(r => r.AuthorId == user.Id && r.Id == id);
                 _dataContext.Post.Remove(post);
                 await _dataContext.SaveChangesAsync();
             }
@@ -168,7 +178,13 @@ namespace CDSP_API.Services
             try
             {
                 post = await _dataContext.Post.SingleOrDefaultAsync(r => r.Id == id);
-            }catch (Exception ex)
+                if(post != null)
+                {
+                    (var _ecr, var comments) = await GetAllCommentsAsync(post.Id);
+                    post.Comment = comments;
+                }
+            }
+            catch (Exception ex)
             {
                 ecr.IsSuccess = false;
                 ecr.MapException(ex);
@@ -177,15 +193,15 @@ namespace CDSP_API.Services
             return (ecr, post);
         }
 
-        public async Task<(EnityCoreResult, Post)> UpdateByIdAsync(int id)
+        public async Task<(EnityCoreResult, Post)> UpdateAsync(Post post, User user)
         {
             EnityCoreResult ecr = new EnityCoreResult();
-            Post post = null;
             try
             {
-                (var _ecr, Post _post) = await GetByIdAsync(id);
-                post = _post;
-                _dataContext.Post.Update(post);
+                Post _post = await _dataContext.Post.FirstOrDefaultAsync(r=> r.AuthorId==user.Id && r.Id== post.Id);
+                _post.Title = post.Title;
+                _post.Body = post.Body;
+                _dataContext.Post.Update(_post);
                 await _dataContext.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -197,7 +213,7 @@ namespace CDSP_API.Services
             return (ecr, post);
         }
 
-        public async Task<(EnityCoreResult, int)> VotesAsync(int id)
+        public async Task<(EnityCoreResult, int)> GetVoteCountAsync(int id)
         {
             EnityCoreResult ecr = new EnityCoreResult();
             List<Vote> votes = null;
@@ -225,5 +241,44 @@ namespace CDSP_API.Services
 
             return (ecr, votesValue);
         }
+
+        public async Task<(EnityCoreResult, List<Comment>)> GetAllCommentsAsync(int id)
+        {
+            EnityCoreResult ecr = new EnityCoreResult();
+            try
+            {
+                Post _post = await _dataContext.Post.SingleOrDefaultAsync(r => r.Id == id);
+                (var __ecr, var comments) = await _commentService.GetAll(id);
+                _post.Comment = comments;
+                return(ecr, comments);
+            }
+            catch (Exception ex)
+            {
+                ecr.IsSuccess = false;
+                ecr.MapException(ex);
+            }
+
+            return (ecr, null);
+        }
+
+        public async Task<(EnityCoreResult, List<Post>)> GetAllPostsOnSubThreadAsync(string subthreadName)
+        {
+            EnityCoreResult ecr = new EnityCoreResult();
+            try
+            {
+                (var _ecr, var subThread) = await _subThreadsService.GetByNameAsync(subthreadName);
+                var posts = await _dataContext.Post.Where(r => r.SubThreadId == subThread.Id).ToListAsync();
+                return (_ecr, posts);
+            }
+            catch (Exception ex)
+            {
+                ecr.IsSuccess = false;
+                ecr.MapException(ex);
+            }
+
+            return (ecr, null);
+        }
+
+
     }
 }

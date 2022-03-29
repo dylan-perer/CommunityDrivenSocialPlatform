@@ -79,7 +79,7 @@ namespace CommunityDrivenSocialPlatform.UnitTests
         {
             //arrange
             var url = CreateUrl(ApiRoutes.Controller.RouteVariable.SubThreadName);
-            url = url.Replace("{name}", name);
+            url = url.Replace("{subThreadName}", name);
 
             //act 
             var res = await TestClient.GetAsync(url);
@@ -106,7 +106,7 @@ namespace CommunityDrivenSocialPlatform.UnitTests
         {
             //arrange
             var url = CreateUrl(ApiRoutes.Controller.RouteVariable.SubThreadName);
-            url = url.Replace("{name}", name);
+            url = url.Replace("{subThreadName}", name);
             UpdateSubThreadRequest updateSubThreadRequest = new UpdateSubThreadRequest
             {
                 Description = "desc"+Guid.NewGuid().ToString(),
@@ -123,7 +123,7 @@ namespace CommunityDrivenSocialPlatform.UnitTests
         {
             //arrange
             var url = CreateUrl(ApiRoutes.Controller.RouteVariable.SubThreadUsers);
-            url = url.Replace("{name}", name);
+            url = url.Replace("{subThreadName}", name);
 
             //act 
             var res = await TestClient.GetAsync(url);
@@ -134,7 +134,7 @@ namespace CommunityDrivenSocialPlatform.UnitTests
         {
             //arrange
             var url = CreateUrl(ApiRoutes.Controller.RouteVariable.SubThreadJoin);
-            url = url.Replace("{name}", name);
+            url = url.Replace("{subThreadName}", name);
 
             //act 
             var res = await TestClient.GetAsync(url);
@@ -145,7 +145,7 @@ namespace CommunityDrivenSocialPlatform.UnitTests
         {
             //arrange
             var url = CreateUrl(ApiRoutes.Controller.RouteVariable.SubThreadLeave);
-            url = url.Replace("{name}", name);
+            url = url.Replace("{subThreadName}", name);
 
             //act 
             var res = await TestClient.GetAsync(url);
@@ -156,7 +156,7 @@ namespace CommunityDrivenSocialPlatform.UnitTests
         {
             //arrange
             var url = CreateUrl(ApiRoutes.Controller.RouteVariable.SubThreadName);
-            url = url.Replace("{name}", name);
+            url = url.Replace("{subThreadName}", name);
 
             //act 
             var res = await TestClient.DeleteAsync(url);

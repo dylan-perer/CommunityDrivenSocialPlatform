@@ -45,6 +45,12 @@
 
         }
 
+        public static class Post
+        {
+            public static readonly string PostDeleted = "Post was successfully deleted";
+            public static readonly string NonExistenPost = "Sorry, No post in that name exists.";
+        }
+
 
 
     }

@@ -8,7 +8,7 @@
             public const string IdentityController = "/identity";
             public const string UsersController = "/user";
             public const string SubThreadController = "/subthread";
-            public const string PostController = "/post";
+            public const string PostController = "/"+SubThreadController+"/"+RouteVariable.SubThreadName+"/post";
             public const string CommentController = "/comment";
             public const string FeedController = "/feed";
 
@@ -21,11 +21,13 @@
             public static class RouteVariable
             {
                 public const string Username = "{username}";
-                public const string SubThreadName = "{name}";
-                public const string SubThreadJoin = "{name}/join";
-                public const string SubThreadLeave = "{name}/leave";
-                public const string SubThreadUsers = "{name}/users";
 
+                public const string SubThreadName = "{subThreadName}";
+                public const string SubThreadJoin = "{subThreadName}/join";
+                public const string SubThreadLeave = "{subThreadName}/leave";
+                public const string SubThreadUsers = "{subThreadName}/users";
+
+                public const string PostId = "{id}";
             }
 
         }

@@ -37,15 +37,18 @@ namespace CDSP_API.Services
             return ecr;
         }
 
-        public async Task<EnityCoreResult> DeleteAsync(SubThread subThread)
+        public async Task<EnityCoreResult> DeleteAsync(SubThread subThread, User user)
         {
             EnityCoreResult ecr = new EnityCoreResult();
 
             try
             {
-                await GetByNameAsync(subThread.Name);
-                _dataContext.SubThread.Remove(subThread);
-                await _dataContext.SaveChangesAsync();
+                if(subThread.CreatorId == user.Id)
+                {
+                    await GetByNameAsync(subThread.Name);
+                    _dataContext.SubThread.Remove(subThread);
+                    await _dataContext.SaveChangesAsync();
+                }
             }
             catch (Exception ex)
             {
@@ -91,14 +94,18 @@ namespace CDSP_API.Services
             return (ecr, subThread);
         }
 
-        public async Task<EnityCoreResult> UpdateAsync(SubThread subThread)
+        public async Task<EnityCoreResult> UpdateAsync(SubThread subThread, User user)
         {
             EnityCoreResult ecr = new EnityCoreResult();
 
             try
             {
-                _dataContext.SubThread.Update(subThread);
-                await _dataContext.SaveChangesAsync();
+                SubThreadUser subThreadUser = await _dataContext.SubThreadUser.SingleOrDefaultAsync(r => r.UserId == user.Id && r.SubThreadId == subThread.Id);
+                if (subThreadUser != null && subThreadUser.SubThreadRoleId==(int)SubThreadRoleEnum.MODERATOR)
+                {
+                    _dataContext.SubThread.Update(subThread);
+                    await _dataContext.SaveChangesAsync();
+                }
             }
             catch (Exception ex)
             {

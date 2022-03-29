@@ -20,6 +20,9 @@ namespace CDSP_API.ServiceConfig
             services.AddScoped<IIdentityService, IdentityService>();
             services.AddScoped<IUsersService, UsersService>();
             services.AddScoped<ISubThreadsService, SubThreadsService>();
+            services.AddScoped<IPostService, PostService>();
+            services.AddScoped<ICommentService, CommentService>();
+            services.AddScoped<IFeedService, FeedService>();
 
         }
     }
