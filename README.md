@@ -1,1 +1,1 @@
-![alt text](https://github.com/dylan-perer/CommunityDrivenSocialPlatform/master/cdsp.png?raw=true)
+![alt text](https://github.com/dylan-perer/CommunityDrivenSocialPlatform/blob/master/cdsp.png)
